@@ -1,0 +1,44 @@
+<div id="content" class="my-main">
+    <div class="my-form">
+        <div class="my-divs">
+            <div class="my-div-5">
+                <div class="my-div-51">
+                    <button class="my-button-511" (click)="showDivSell = !showDivSell">
+                        <img [src]="selectedTokenSell.image" [alt]="selectedTokenSell.name">&nbsp;&nbsp;{{selectedTokenSell.ticker}}
+                    </button>
+                    <div *ngIf="showDivSell" class="popup">
+                        <div *ngFor="let token of tokensSell" class="row" (click)="selectTokenSell(token)">
+                            <img [src]="token.image" [alt]="token.name">
+                            <span>{{token.name}}</span>
+                        </div>
+                    </div>
+                    <input type="number" class="my-input-512" placeholder="0.0" minlength="1" maxlength="10"
+                        [(ngModel)]="tokenAmountToSpend" (ngModelChange)="calculateTokenPrice($event)">
+                </div>
+                <div class="my-div-52" id="daiBalance">Balance: {{ spendTokenBalance }}</div>
+            </div>
+            <div class="switchDiv">
+                <div class="switchButton" (click)="swapBuyAndSellTokens()">
+                    <img class="switchImage" src="assets/images/update-icon.png" alt="swap">
+                </div>
+            </div>
+            <div class="my-div-5">
+                <div class="my-div-51">
+                    <button class="my-button-511" (click)="showDivBuy = !showDivBuy">
+                        <img [src]="selectedTokenBuy.image" [alt]="selectedTokenBuy.name">&nbsp;&nbsp;{{selectedTokenBuy.ticker}}
+                    </button>
+                    <div *ngIf="showDivBuy" class="popup">
+                        <div *ngFor="let token of tokensBuy" class="row" (click)="selectTokenBuy(token)">
+                            <img [src]="token.image" [alt]="token.name">
+                            <span>{{token.name}}</span>
+                        </div>
+                    </div>
+                    <input id="calculatedEth" class="my-input-512" placeholder="0.0" [value]="tokenAmountToReceive"
+                        disabled>
+                </div>
+                <div class="my-div-52" id="ethBalance">Balance: {{ receiveTokenBalance }}</div>
+            </div>
+            <button class="my-button my-button-buy" (click)="swapTokens()">Swap</button>
+        </div>
+    </div>
+</div>

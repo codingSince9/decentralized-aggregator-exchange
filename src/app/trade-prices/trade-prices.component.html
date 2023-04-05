@@ -1,0 +1,15 @@
+<button (click)="toggleTable()">{{showTable ? 'Hide prices' : 'Show prices'}}</button>
+<table *ngIf="showTable">
+    <tr>
+        <th>Exchange Name</th>
+        <th>ETH/USDC</th>
+        <th>LINK/USDC</th>
+        <th>MATIC/USDC</th>
+        <th>SUSHI/USDC</th>
+        <th>WBTC/USDC</th>
+    </tr>
+    <tr *ngFor="let item of exchangesData">
+        <td>{{ item.exchangeName }}</td>
+        <td *ngFor="let pair of item.pairs">{{ pair.price | number: '1.4-4' }}</td>
+    </tr>
+</table>
