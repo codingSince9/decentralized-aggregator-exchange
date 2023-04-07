@@ -1,9 +1,18 @@
 import { Injectable } from '@angular/core';
 import Web3 from 'web3';
+import { DydxService } from './dydx.service';
+import { PriceIndexService } from './price-index.service';
+import { UniswapService } from './uniswap.service';
 
 
 declare let require: any;
 declare let window: any;
+
+interface Dex {
+  name: string;
+  reserve0: number;
+  reserve1: number;
+}
 
 const liquidDex = require('../../build/contracts/FullyLiquidDecentralizedExchange.json');
 const illiquidDex = require('../../build/contracts/NotSoLiquidDecentralizedExchange.json');
@@ -34,6 +43,12 @@ export class TradeService {
   private sushiTokenContract: any;
   private usdcTokenContract: any;
   private wbtcTokenContract: any;
+
+  constructor(
+    private uniswapService: UniswapService,
+    private dydxService: DydxService,
+    private priceIndexService: PriceIndexService
+  ) { }
 
   getRandomTradeSize(probability: number) {
     let size: number;
@@ -101,6 +116,111 @@ export class TradeService {
     console.log("Transaction:", transactionReceipt);
   }
 
+  getAmountOut(reserve0: number, reserve1: number, size: number) {
+    const k = reserve0 * reserve1;
+    const newReserve0 = reserve0 + size;
+    const newReserve1 = k / newReserve0;
+    return reserve1 - newReserve1;
+  }
+
+  getMostProfitableDex(dexes: Dex[], tradeSize: number) {
+    let maximumOutcome = 0;
+    let maximumOutcomeDex = "";
+    for (let i = 0; i < dexes.length; i++) {
+      let amountOut = this.getAmountOut(dexes[i].reserve0, dexes[i].reserve1, tradeSize);
+      if (amountOut > maximumOutcome) {
+        maximumOutcome = amountOut;
+        maximumOutcomeDex = dexes[i].name;
+      }
+    }
+    return maximumOutcomeDex;
+  }
+
+  async calculateTradeSizeForEachDex(dexes: Dex[], tradeSize: number) {
+    let tradeSizes: any = {
+      liquidDex: 0,
+      illiquidDex: 0,
+      uniswap: 0
+    }
+    for (let i = 0; i < tradeSize; i += 10) {
+      const maximumOutcomeDex = this.getMostProfitableDex(dexes, 10);
+      tradeSizes[maximumOutcomeDex] += 10;
+    }
+    const leftover = tradeSize % 10;
+    const maximumOutcomeDex = this.getMostProfitableDex(dexes, leftover);
+    tradeSizes[maximumOutcomeDex] += leftover;
+
+    return tradeSizes;
+  }
+
+  async getPoolLiquidity(contract: any, token1: string, token2: string) {
+    return await contract.methods.reserves(
+      this.priceIndexService.getToken(token2, true),
+      this.priceIndexService.getToken(token1, true),
+      this.web3.utils.toWei("1", "ether")).call();
+  }
+
+  async findBestLiquidity(buyToken: string, sellToken: string, tradeSize: number) {
+    let swap = false;
+    let liquidDexPairLiquidity: Dex = {
+      name: "liquidDex",
+      reserve0: await this.getPoolLiquidity(this.liquidDexContract, buyToken, sellToken),
+      reserve1: await this.getPoolLiquidity(this.liquidDexContract, sellToken, buyToken)
+    }
+    let illiquidDexPairLiquidity: Dex = {
+      name: "illiquidDex",
+      reserve0: await this.getPoolLiquidity(this.illiquidDexContract, buyToken, sellToken),
+      reserve1: await this.getPoolLiquidity(this.illiquidDexContract, sellToken, buyToken)
+    }
+    let uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == buyToken && m.token1.symbol == sellToken);
+    if (!uniswapMarket) {
+      uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == sellToken && m.token1.symbol == buyToken);
+      swap = true;
+    }
+    let uniswapPairLiquidity: Dex = {
+      name: "uniswap",
+      reserve0: swap ? uniswapMarket!.reserve1 : uniswapMarket!.reserve0,
+      reserve1: swap ? uniswapMarket!.reserve0 : uniswapMarket!.reserve1
+    };
+    if (swap) {
+      uniswapPairLiquidity.reserve0 *= this.uniswapService.ETH_PRICE;
+    } else {
+      uniswapPairLiquidity.reserve1 *= this.uniswapService.ETH_PRICE;
+    }
+    const dexes: Dex[] = [liquidDexPairLiquidity, illiquidDexPairLiquidity, uniswapPairLiquidity];
+    const percentages = this.calculateTradeSizeForEachDex(dexes, tradeSize);
+    return percentages;
+  }
+
+  async executeTrade(direction: boolean, buyToken: string, sellToken: string, tradeSize: number) {
+  }
+
+  async tokenSwap(direction: boolean, buyToken: string, sellToken: string, tradeSize: number) {
+    if (buyToken !== "USDC" && sellToken !== "USDC") {
+      const liquidityObject = this.findBestLiquidity("USDC", sellToken, tradeSize);
+      const liquidityObject2 = this.findBestLiquidity(buyToken, "USDC", tradeSize);
+      for (let [exchange, tradeSize] of Object.entries(liquidityObject)) {
+        if (exchange === "liquidDex") {
+          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+        } else if (exchange === "illiquidDex") {
+          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+        } else if (exchange === "uniswap") {
+          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+        }
+      }
+      for (let [exchange, tradeSize] of Object.entries(liquidityObject2)) {
+        if (exchange === "liquidDex") {
+          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+        } else if (exchange === "illiquidDex") {
+          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+        } else if (exchange === "uniswap") {
+          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+        }
+      }
+      // OVDJE NASTAVITI
+    }
+  }
+
   async loadBlockchainData() {
     console.log("Initializing trade service...");
     if (typeof window.ethereum !== 'undefined') {
@@ -141,42 +261,4 @@ export class TradeService {
     //   executeRandomTrade(this.illiquidDexContract, false);
     // }, Math.floor(Math.random() * 50000) + 10000); // random interval between 20 and 100 seconds
   }
-
-
-  // async performTrade() {
-
-
-  //   // Select a random trade size
-  //   const tradeSize = Math.floor(Math.random() * 100);
-
-  //   // Get the current token prices from the MyDex contract
-  //   const tokenPrices = await myDexContract.methods.getTokenPrices().call();
-
-  //   // Calculate the amount of input and output tokens for the trade
-  //   let inputToken, outputToken, inputAmount, outputAmount;
-  //   if (Math.random() < 0.5) {
-  //     // Buy output token with input token
-  //     inputToken = "USDC";
-  //     outputToken = tokenPair;
-  //     inputAmount = web3.utils.toWei(tradeSize.toString(), "ether");
-  //     outputAmount = web3.utils.toWei((tradeSize * tokenPrices[outputToken] / tokenPrices[inputToken]).toString(), "ether");
-  //   } else {
-  //     // Sell input token for output token
-  //     inputToken = tokenPair;
-  //     outputToken = "USDC";
-  //     inputAmount = web3.utils.toWei(tradeSize.toString(), "ether");
-  //     outputAmount = web3.utils.toWei((tradeSize * tokenPrices[inputToken] / tokenPrices[outputToken]).toString(), "ether");
-  //   }
-
-  //   // Get the user's wallet address
-  //   const accounts = await web3.eth.getAccounts();
-  //   const userAddress = accounts[0];
-
-  //   // Approve the MyDex contract to spend the input token
-  //   const inputTokenContract = new web3.eth.Contract(ITOKEN_ABI, TOKEN_ADDRESS[inputToken]);
-  //   await inputTokenContract.methods.approve(MYDEX_ADDRESS, inputAmount).send({ from: userAddress });
-
-  //   // Execute the trade on the MyDex contract
-  //   await myDexContract.methods.trade(inputToken, outputToken, inputAmount, outputAmount).send({ from: userAddress });
-  // }
 }

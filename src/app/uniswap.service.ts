@@ -28,8 +28,13 @@ interface Market {
 export class UniswapService {
   private apiUrl = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
   markets: Market[] = [];
+  ETH_PRICE: number = 0;
 
   constructor(private http: HttpClient) { }
+
+  ngOnInit() {
+    this.getUniswapData();
+  }
 
   getUniswapData() {
     const query = `
@@ -141,7 +146,7 @@ export class UniswapService {
       if ((market.token1.symbol == 'WETH' || market.token0.symbol == 'USDC') &&
         !(market.token1.symbol == 'WETH' && market.token0.symbol == 'USDC')
       ) {
-        market.token0Price = ETH_PRICE / market.token0Price;
+        market.token0Price = this.ETH_PRICE / market.token0Price;
         market.token1.symbol = 'USDC';
       } else if (market.token1.symbol == 'WETH' && market.token0.symbol == 'USDC') {
         const temp = market.token0;
@@ -152,19 +157,36 @@ export class UniswapService {
     };
 
     const data = this.http.post(this.apiUrl, { query });
-    let ETH_PRICE = 0;
     this.markets = [];
     data.subscribe((res: any) => {
       const pairs = res.data;
       Object.keys(pairs).forEach((key) => {
         const value = pairs[key];
         if (key == 'eth_usdc') {
-          ETH_PRICE = value.token0Price;
+          this.ETH_PRICE = value.token0Price;
+        } else if (key == 'wbtc_usdc') {
+          value.reserve1 /= this.ETH_PRICE;
         }
         this.markets.push(correctMarket(value));
       });
     });
 
     return this.markets;
+  }
+
+  getPairLiquidity(token0: string, token1: string) {
+    const market = this.markets.find((m) => m.token0.symbol == token0 && m.token1.symbol == token1);
+    console.log(market);
+    if (market) {
+      return {
+        symbol0: market.token0.symbol,
+        symbol1: market.token1.symbol,
+        reserve0: market.reserve0,
+        reserve1: market.reserve1,
+        k: market.reserve0 * market.reserve1,
+        eth_price: this.ETH_PRICE
+      };
+    }
+    return 0;
   }
 }

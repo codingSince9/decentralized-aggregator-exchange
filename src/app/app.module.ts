@@ -6,6 +6,9 @@ import { AppComponent } from './app.component';
 import { TradeDexComponent } from './trade-dex/trade-dex.component';
 import { FormsModule } from '@angular/forms';
 import { TradePricesComponent } from './trade-prices/trade-prices.component';
+import { UniswapService } from './uniswap.service';
+import { DydxService } from './dydx.service';
+import { PriceIndexService } from './price-index.service';
 
 @NgModule({
   declarations: [
@@ -19,7 +22,11 @@ import { TradePricesComponent } from './trade-prices/trade-prices.component';
     HttpClientModule,
     FormsModule,
   ],
-  providers: [],
+  providers: [
+    UniswapService,
+    DydxService,
+    PriceIndexService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

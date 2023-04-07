@@ -37,12 +37,31 @@ export class DydxService {
     result.subscribe((markets: any) => {
       Object.keys(markets).forEach((key) => {
         const value = markets[key];
-        // console.log(key, value);
+        console.log(key, value);
         if (this.marketsToFetch.includes(value.market)) {
           this.markets.push(value);
         }
       });
     });
     return this.markets;
+  }
+
+  getPairLiquidity(pair: string) {
+    const result = this.http.get(`${this.apiUrl}/markets/${pair}`).pipe(
+      map((response: any) => response)
+    );
+    let resultObject = result.subscribe((markets: any) => {
+      Object.keys(markets).forEach((key) => {
+        const value = markets[key];
+        console.log(key, value);
+        return {
+          symbol0: value.baseAsset,
+          symbol1: value.quoteAsset,
+          reserve0: value.baseAsset,
+          reserve1: value.quoteAsset,
+        }
+      });
+    });
+    return resultObject;
   }
 }
