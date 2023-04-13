@@ -14,6 +14,12 @@ interface Dex {
   reserve1: number;
 }
 
+interface TradeSize {
+  liquidDex: number,
+  illiquidDex: number,
+  uniswap: number
+}
+
 const liquidDex = require('../../build/contracts/FullyLiquidDecentralizedExchange.json');
 const illiquidDex = require('../../build/contracts/NotSoLiquidDecentralizedExchange.json');
 const linkToken = require('../../build/contracts/Link.json');
@@ -43,6 +49,7 @@ export class TradeService {
   private sushiTokenContract: any;
   private usdcTokenContract: any;
   private wbtcTokenContract: any;
+  private transactions: any = [];
 
   constructor(
     private uniswapService: UniswapService,
@@ -98,12 +105,12 @@ export class TradeService {
       from: tradeAccountPublicKey,
       to: dexContract.options.address,
       gasPrice: 20000000000,
-      gas: 6721975,
+      gas: 67210,
       value: 0,
       data: "transferData"
     };
 
-    await this.usdcTokenContract.methods.approve(dexContract.options.address, tradeSize).send({ from: tradeAccountPublicKey, gas: 6721975 });
+    await this.usdcTokenContract.methods.approve(dexContract.options.address, tradeSize).send({ from: tradeAccountPublicKey, gas: 67210 });
     const daiAmount = await dexContract.methods.getAmountOut(this.usdcTokenContract.options.address, tokenPair, tradeSize).call();
     console.log("Dai amount buy: " + this.web3.utils.fromWei(daiAmount, 'ether'));
     if (isBuying) {
@@ -120,6 +127,8 @@ export class TradeService {
     const k = reserve0 * reserve1;
     const newReserve0 = reserve0 + size;
     const newReserve1 = k / newReserve0;
+    // console.log(k, typeof newReserve0, newReserve1);
+    // console.log("Amount out: " + (reserve1 - newReserve1));
     return reserve1 - newReserve1;
   }
 
@@ -127,40 +136,73 @@ export class TradeService {
     let maximumOutcome = 0;
     let maximumOutcomeDex = "";
     for (let i = 0; i < dexes.length; i++) {
+      // console.log("method", i);
+      // console.log("Dex: " + dexes[i].name, "Reserve0: " + dexes[i].reserve0, "Reserve1: " + dexes[i].reserve1);
       let amountOut = this.getAmountOut(dexes[i].reserve0, dexes[i].reserve1, tradeSize);
+      console.log("Amount out: " + amountOut);
       if (amountOut > maximumOutcome) {
         maximumOutcome = amountOut;
         maximumOutcomeDex = dexes[i].name;
       }
     }
-    return maximumOutcomeDex;
+    // maximumOutcome = this.web3.utils.toWei(maximumOutcome.toString(), 'ether');
+    return { maximumOutcomeDex, maximumOutcome };
   }
 
-  async calculateTradeSizeForEachDex(dexes: Dex[], tradeSize: number) {
+  calculateTradeSizeForEachDex(dexes: Dex[], tradeSize: number, calculateAmount: boolean) {
+    const STEP = 1;
     let tradeSizes: any = {
       liquidDex: 0,
       illiquidDex: 0,
       uniswap: 0
     }
-    for (let i = 0; i < tradeSize; i += 10) {
-      const maximumOutcomeDex = this.getMostProfitableDex(dexes, 10);
-      tradeSizes[maximumOutcomeDex] += 10;
+    let tradeOutcomeAmount = 0;
+    let leftover = 0;
+    if (tradeSize >= 1) {
+      for (let i = 1; i <= tradeSize; i += STEP) {
+        // console.log("i: " + i, STEP);
+        const { maximumOutcomeDex, maximumOutcome } = this.getMostProfitableDex(dexes, STEP);
+        console.log(maximumOutcome, maximumOutcomeDex);
+        tradeSizes[maximumOutcomeDex] += STEP;
+        for (let j = 0; j < dexes.length; j++) {
+          if (dexes[j].name === maximumOutcomeDex) {
+            dexes[j].reserve0 += STEP;
+            dexes[j].reserve1 -= maximumOutcome;
+            tradeOutcomeAmount += Number(maximumOutcome);
+            // console.log("i2: " + j, maximumOutcome);
+          }
+        }
+        leftover = i;
+      }
     }
-    const leftover = tradeSize % 10;
-    const maximumOutcomeDex = this.getMostProfitableDex(dexes, leftover);
+    leftover = tradeSize - leftover;
+    const { maximumOutcomeDex, maximumOutcome } = this.getMostProfitableDex(dexes, leftover);
     tradeSizes[maximumOutcomeDex] += leftover;
+    tradeOutcomeAmount += Number(maximumOutcome);
+    console.log("Trade sizes: ", tradeSizes);
+    console.log("Trade outcome amount: ", tradeOutcomeAmount);
+    console.log(typeof tradeOutcomeAmount);
 
-    return tradeSizes;
+    // tradeOutcomeAmount = this.web3.utils.fromWei(tradeOutcomeAmount.toString(), 'ether');
+    if (calculateAmount) {
+      return tradeOutcomeAmount;
+    } else {
+      return tradeSizes as TradeSize;
+    }
   }
 
   async getPoolLiquidity(contract: any, token1: string, token2: string) {
-    return await contract.methods.reserves(
+    const liquidity = await contract.methods.reserves(
       this.priceIndexService.getToken(token2, true),
-      this.priceIndexService.getToken(token1, true),
-      this.web3.utils.toWei("1", "ether")).call();
+      this.priceIndexService.getToken(token1, true)
+    ).call();
+    console.log("Liquidity: " + liquidity);
+    console.log(typeof liquidity);
+    console.log("Liquidity: " + this.web3.utils.fromWei(liquidity, 'ether'));
+    return this.web3.utils.fromWei(liquidity, 'ether');
   }
 
-  async findBestLiquidity(buyToken: string, sellToken: string, tradeSize: number) {
+  async findBestLiquidity(buyToken: string, sellToken: string, tradeSize: number, calculateAmount: boolean) {
     let swap = false;
     let liquidDexPairLiquidity: Dex = {
       name: "liquidDex",
@@ -172,53 +214,179 @@ export class TradeService {
       reserve0: await this.getPoolLiquidity(this.illiquidDexContract, buyToken, sellToken),
       reserve1: await this.getPoolLiquidity(this.illiquidDexContract, sellToken, buyToken)
     }
+    console.log(buyToken, sellToken);
     let uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == buyToken && m.token1.symbol == sellToken);
+    console.log(this.uniswapService.markets);
     if (!uniswapMarket) {
+      console.log(uniswapMarket);
       uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == sellToken && m.token1.symbol == buyToken);
-      swap = true;
+      swap = false;
     }
+    console.log(uniswapMarket);
     let uniswapPairLiquidity: Dex = {
       name: "uniswap",
       reserve0: swap ? uniswapMarket!.reserve1 : uniswapMarket!.reserve0,
       reserve1: swap ? uniswapMarket!.reserve0 : uniswapMarket!.reserve1
     };
+    console.log("uniswapPairLiquidity", uniswapPairLiquidity);
     if (swap) {
       uniswapPairLiquidity.reserve0 *= this.uniswapService.ETH_PRICE;
+      uniswapPairLiquidity.reserve1 = Number(uniswapPairLiquidity.reserve1);
     } else {
+      uniswapPairLiquidity.reserve0 = Number(uniswapPairLiquidity.reserve0);
       uniswapPairLiquidity.reserve1 *= this.uniswapService.ETH_PRICE;
     }
     const dexes: Dex[] = [liquidDexPairLiquidity, illiquidDexPairLiquidity, uniswapPairLiquidity];
-    const percentages = this.calculateTradeSizeForEachDex(dexes, tradeSize);
+    const percentages = this.calculateTradeSizeForEachDex(dexes, tradeSize, calculateAmount);
     return percentages;
   }
 
-  async executeTrade(direction: boolean, buyToken: string, sellToken: string, tradeSize: number) {
+  async executeTrade(sellToken: any, buyToken: any, tradeSize: number, dexContract: any) {
+    console.log("Trade size: " + tradeSize);
+    console.log("Sell token: " + sellToken);
+    console.log("Buy token: " + buyToken);
+    console.log("Dex contract: " + dexContract);
+    const sellTokenAddress = sellToken.options.address;
+    const buyTokenAddress = buyToken.options.address;
+    console.log("adding to transactions", this.transactions);
+    console.log(this.transactions.length);
+    let tx: any;
+
+    if (dexContract) {
+      const tokenAmount = await dexContract.methods.getAmountOut(sellTokenAddress, buyTokenAddress, tradeSize).call();
+      console.log("Token amount to buy: " + this.web3.utils.fromWei(tokenAmount, 'ether'));
+      // await sellToken.methods.approve(dexContract.options.address, tradeSize).send({ from: this.account, gas: 67210 });
+      // await dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).send({ from: this.account, gas: 6721975 }),
+      // dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).encodeABI();
+      tx = dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).send.request({ from: this.account });
+    } else {
+      // Mock the trade, since we can't execute it on Uniswap
+      // await buyToken.methods.approve(this.account, tradeSize).send({ from: PUBLIC_KEY9, gas: 67210 });
+
+      let transactionObject = {
+        from: PUBLIC_KEY9,
+        to: this.account,
+        gasPrice: 20000000000,
+        gas: 67210,
+        value: 0,
+        data: buyToken.methods.transfer(this.account, tradeSize).encodeABI()
+      };
+      const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, PRIVATE_KEY9);
+      tx = this.web3.eth.sendSignedTransaction.request(signedTransaction.rawTransaction)
+      console.log("Mocked transaction: ", tx);
+      // this.transactions.push(tx) 
+    }
+    return tx;
   }
 
-  async tokenSwap(direction: boolean, buyToken: string, sellToken: string, tradeSize: number) {
+  async tokenSwap(buyToken: string, sellToken: string, tradeSize: number) {
+    let tx: any;
+    const batch = new this.web3.BatchRequest();
+    console.log("Buy token: " + buyToken);
+    console.log("Sell token: " + sellToken);
     if (buyToken !== "USDC" && sellToken !== "USDC") {
-      const liquidityObject = this.findBestLiquidity("USDC", sellToken, tradeSize);
-      const liquidityObject2 = this.findBestLiquidity(buyToken, "USDC", tradeSize);
-      for (let [exchange, tradeSize] of Object.entries(liquidityObject)) {
+      console.log("Both tokens are not USDC");
+      const liquidityObject = await this.findBestLiquidity("USDC", sellToken, tradeSize, false);
+      const liquidityObject2 = await this.findBestLiquidity(buyToken, "USDC", tradeSize, false);
+      console.log("Liquidity object: ", liquidityObject);
+      console.log("Liquidity object 2: ", liquidityObject2);
+      for (let [exchange, dexTradeSize] of Object.entries(liquidityObject)) {
         if (exchange === "liquidDex") {
-          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+          tx = await this.executeTrade(
+            this.usdcTokenContract,
+            this.priceIndexService.getToken(sellToken, false),
+            dexTradeSize,
+            this.liquidDexContract
+          );
+          batch.add(tx);
         } else if (exchange === "illiquidDex") {
-          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+          tx = await this.executeTrade(
+            this.usdcTokenContract,
+            this.priceIndexService.getToken(sellToken, false),
+            dexTradeSize,
+            this.illiquidDexContract
+          );
         } else if (exchange === "uniswap") {
-          await this.executeTrade(direction, "USDC", sellToken, tradeSize);
+          tx = await this.executeTrade(
+            this.usdcTokenContract,
+            this.priceIndexService.getToken(sellToken, false),
+            dexTradeSize,
+            null
+          );
         }
+        await tx;
+        console.log("tx", tx);
+        batch.add(tx);
       }
-      for (let [exchange, tradeSize] of Object.entries(liquidityObject2)) {
+      for (let [exchange, dexTradeSize] of Object.entries(liquidityObject2)) {
         if (exchange === "liquidDex") {
-          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.usdcTokenContract,
+            dexTradeSize,
+            this.liquidDexContract
+          );
         } else if (exchange === "illiquidDex") {
-          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.usdcTokenContract,
+            dexTradeSize,
+            this.illiquidDexContract
+          );
         } else if (exchange === "uniswap") {
-          await this.executeTrade(direction, buyToken, "USDC", tradeSize);
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.usdcTokenContract,
+            dexTradeSize,
+            null
+          );
         }
+        await tx;
+        console.log("tx", tx);
+        batch.add(tx);
       }
-      // OVDJE NASTAVITI
+    } else {
+      const liquidityObject = await this.findBestLiquidity(buyToken, sellToken, tradeSize, false);
+      console.log("Liquvidity object: ", liquidityObject);
+      console.log("Buy token: ", buyToken);
+      console.log("Sell token: ", sellToken);
+      for (let [exchange, dexTradeSize] of Object.entries(liquidityObject)) {
+        if (exchange === "liquidDex" && dexTradeSize > 0) {
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.priceIndexService.getToken(buyToken, false),
+            dexTradeSize,
+            this.liquidDexContract
+          );
+        } else if (exchange === "illiquidDex" && dexTradeSize > 0) {
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.priceIndexService.getToken(buyToken, false),
+            dexTradeSize,
+            this.illiquidDexContract
+          );
+        } else if (exchange === "uniswap" && dexTradeSize > 0) {
+          tx = await this.executeTrade(
+            this.priceIndexService.getToken(sellToken, false),
+            this.priceIndexService.getToken(buyToken, false),
+            dexTradeSize,
+            null
+          );
+        }
+        await tx;
+        console.log("tx", tx);
+        batch.add(tx);
+      }
     }
+    // Execute the transactions in a single batch
+    // const batch = new this.web3.BatchRequest();
+    // for (let i = 0; i < this.transactions.length; i++) {
+    //   batch.add(this.transactions[i]);
+    // }
+    console.log("Executing batch...");
+    console.log("Transactions: ", this.transactions);
+    console.log("Batch: ", batch);
+    batch.execute();
   }
 
   async loadBlockchainData() {

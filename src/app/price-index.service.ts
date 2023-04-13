@@ -52,31 +52,31 @@ export class PriceIndexService {
   }
 
   getToken = (token: string, addressRequested: boolean) => {
-    let address: any;
+    let contract: any;
     switch (token) {
       case "LINK":
-        address = this.linkTokenContract;
+        contract = this.linkTokenContract;
         break;
       case "MATIC":
-        address = this.maticTokenContract;
+        contract = this.maticTokenContract;
         break;
       case "SUSHI":
-        address = this.sushiTokenContract;
+        contract = this.sushiTokenContract;
         break;
       case "WBTC":
-        address = this.wbtcTokenContract;
+        contract = this.wbtcTokenContract;
         break;
       case "ETH":
-        address = this.liquidDexContract;
+        contract = this.liquidDexContract;
         break;
       case "USDC":
-        address = this.usdcTokenContract;
+        contract = this.usdcTokenContract;
         break;
     }
     if (addressRequested) {
-      return address.options.address;
+      return contract.options.address;
     } else {
-      return address;
+      return contract;
     }
   }
 

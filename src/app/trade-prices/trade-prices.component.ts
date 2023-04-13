@@ -41,7 +41,6 @@ export class TradePricesComponent {
     this.uniswapData = this.uniswapService.getUniswapData();
     this.dydxData = this.dydxService.getPairs();
     this.tradeData = await this.priceIndexService.getPrices();
-    console.log(this.uniswapData);
     // setInterval(async () => {
     //   this.uniswapData = this.uniswapService.getUniswapData();
     //   this.dydxData = this.dydxService.getPairs();

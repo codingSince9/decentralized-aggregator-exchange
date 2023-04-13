@@ -37,7 +37,7 @@ export class DydxService {
     result.subscribe((markets: any) => {
       Object.keys(markets).forEach((key) => {
         const value = markets[key];
-        console.log(key, value);
+        // console.log(key, value);
         if (this.marketsToFetch.includes(value.market)) {
           this.markets.push(value);
         }
@@ -53,7 +53,7 @@ export class DydxService {
     let resultObject = result.subscribe((markets: any) => {
       Object.keys(markets).forEach((key) => {
         const value = markets[key];
-        console.log(key, value);
+        // console.log(key, value);
         return {
           symbol0: value.baseAsset,
           symbol1: value.quoteAsset,

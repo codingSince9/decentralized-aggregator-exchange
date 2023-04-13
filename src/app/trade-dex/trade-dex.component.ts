@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { PriceIndexService } from '../price-index.service';
+import { TradeService } from '../trade.service';
 
 @Component({
   selector: 'app-trade-dex',
@@ -9,7 +10,8 @@ import { PriceIndexService } from '../price-index.service';
 
 export class TradeDexComponent {
   constructor(
-    private priceIndexService: PriceIndexService
+    private priceIndexService: PriceIndexService,
+    private tradeService: TradeService,
   ) { }
 
 
@@ -27,8 +29,8 @@ export class TradeDexComponent {
     { name: 'Chainlink', ticker: 'LINK', image: '/assets/images/chainlink.png' },
     { name: 'Sushi Swap', ticker: 'SUSHI', image: '/assets/images/sushiswap.png' },
   ];
-  selectedTokenSell: any = this.tokens[0];
-  selectedTokenBuy: any = this.tokens[3];
+  selectedTokenSell: any = this.tokens[3];
+  selectedTokenBuy: any = this.tokens[2];
   tokensSell: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenBuy.ticker);
   tokensBuy: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenSell.ticker);
 
@@ -55,6 +57,7 @@ export class TradeDexComponent {
     this.selectedTokenBuy = temp;
     this.updateTokensToShow();
     this.calculateTokenPrice(this.tokenAmountToSpend);
+    this.getBalances();
   }
 
   updateTokensToShow() {
@@ -64,11 +67,64 @@ export class TradeDexComponent {
 
   calculateTokenPrice = async (amount: number) => {
     this.tokenAmountToSpend = amount;
-    this.tokenAmountToReceive = await this.priceIndexService.getTokenPrice(
-      this.selectedTokenBuy.ticker,
-      this.selectedTokenSell.ticker,
-      amount.toString()
-    );
+    // this.tokenAmountToReceive = await this.priceIndexService.getTokenPrice(
+    //   this.selectedTokenBuy.ticker,
+    //   this.selectedTokenSell.ticker,
+    //   amount.toString()
+    // );
+    if (this.selectedTokenBuy.ticker !== 'USDC' && this.selectedTokenSell.ticker !== 'USDC') {
+      let usdcAmount = await this.tradeService.findBestLiquidity('USDC', this.selectedTokenSell.ticker, amount, true)
+        .then((res) => {
+          if (typeof res === 'number') {
+            return res;
+          } else {
+            let amount = 0;
+            for (let [, dexTradeSize] of Object.entries(res)) {
+              if (dexTradeSize > 0)
+                amount += dexTradeSize;
+            }
+            console.log(amount);
+            return amount;
+          }
+        });
+      this.tokenAmountToReceive = await this.tradeService.findBestLiquidity(this.selectedTokenBuy.ticker, 'USDC', usdcAmount, true)
+        .then((res) => {
+          if (typeof res === 'number') {
+            return res;
+          } else {
+            let amount = 0;
+            for (let [, dexTradeSize] of Object.entries(res)) {
+              if (dexTradeSize > 0)
+                amount += dexTradeSize;
+            }
+            console.log(amount);
+            return amount;
+          }
+        });
+    } else {
+      this.tokenAmountToReceive = await this.tradeService.findBestLiquidity(
+        this.selectedTokenBuy.ticker,
+        this.selectedTokenSell.ticker,
+        amount,
+        true
+      ).then((res) => {
+        if (typeof res === 'number') {
+          return res;
+        } else {
+          let amount = 0;
+          console.log(res);
+          console.log(typeof res);
+          // for (let [, dexTradeSize] of Object.entries(res)) {
+          //   console.log(dexTradeSize);
+          //   console.log(typeof dexTradeSize);
+          //   if (dexTradeSize > 0)
+          //     amount += dexTradeSize;
+          // }
+          // console.log(amount);
+          return Number(res);
+        }
+      });
+    }
   }
 
   getBalances = async () => {
@@ -76,7 +132,12 @@ export class TradeDexComponent {
     this.receiveTokenBalance = await this.priceIndexService.getUserBalance(this.selectedTokenBuy.ticker);
   }
 
-  swapTokens = () => {
-    console.log('swap');
+  swapTokens = async () => {
+    await this.tradeService.tokenSwap(
+      this.selectedTokenBuy.ticker,
+      this.selectedTokenSell.ticker,
+      this.tokenAmountToSpend
+    )
+    this.getBalances();
   }
 }
