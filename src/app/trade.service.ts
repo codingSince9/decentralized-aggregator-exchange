@@ -29,10 +29,14 @@ const usdcToken = require('../../build/contracts/Usdc.json');
 const wbtcToken = require('../../build/contracts/Wbtc.json');
 
 // import variable from .env file
-const PUBLIC_KEY8 = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
-const PUBLIC_KEY9 = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f"
-const PRIVATE_KEY8 = "76db17660b790ecc22ef00bbf93ce9c60989a7a9488aa6f6eb1aa948bb2513b3";
-const PRIVATE_KEY9 = "2979ee37a8723c4b0870240db55f154b4f43db048bace7da227206add2d7fd0d";
+const PUBLIC_KEY8_LAPTOP = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
+const PUBLIC_KEY9_LAPTOP = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f"
+const PUBLIC_KEY_8_DESKTOP = "0x71fb28AC428f36d5F48131211E30A09B44e03c66";
+const PUBLIC_KEY_9_DESKTOP = "0xFDc97c9c268f88F7ada4e8C3963F240Cbd80De0D";
+const PRIVATE_KEY8_LAPTOP = "76db17660b790ecc22ef00bbf93ce9c60989a7a9488aa6f6eb1aa948bb2513b3";
+const PRIVATE_KEY9_LAPTOP = "2979ee37a8723c4b0870240db55f154b4f43db048bace7da227206add2d7fd0d";
+const PRIVATE_KEY_8_DESKTOP = "9a4dde90a50d8243cfef4450d0783f8c6338850a1ad29688fbbe623ce71f12d7";
+const PRIVATE_KEY_9_DESKTOP = "eb428d5c8a8b5c2ee76c18c88f2828b7f86df212800f64f9fdeea26178c39867";
 
 @Injectable({
   providedIn: 'root'
@@ -74,8 +78,8 @@ export class TradeService {
   }
 
   async executeRandomTrade(dexContract: any, isLiquid: boolean) {
-    const tradeAccountPublicKey = isLiquid ? PUBLIC_KEY8 : PUBLIC_KEY9;
-    const tradeAccountPrivateKey = isLiquid ? PRIVATE_KEY8 : PRIVATE_KEY9;
+    const tradeAccountPublicKey = isLiquid ? PUBLIC_KEY8_LAPTOP : PUBLIC_KEY9_LAPTOP;
+    const tradeAccountPrivateKey = isLiquid ? PRIVATE_KEY8_LAPTOP : PRIVATE_KEY9_LAPTOP;
 
     const tokenPair = [
       isLiquid ? this.liquidDexContract : this.illiquidDexContract,
@@ -125,9 +129,9 @@ export class TradeService {
 
   getAmountOut(reserve0: number, reserve1: number, size: number) {
     const k = reserve0 * reserve1;
-    const newReserve0 = reserve0 + size;
+    const newReserve0 = Number(reserve0) + Number(size);
     const newReserve1 = k / newReserve0;
-    // console.log(k, typeof newReserve0, newReserve1);
+    // console.log(k, newReserve0, newReserve1);
     // console.log("Amount out: " + (reserve1 - newReserve1));
     return reserve1 - newReserve1;
   }
@@ -139,7 +143,7 @@ export class TradeService {
       // console.log("method", i);
       // console.log("Dex: " + dexes[i].name, "Reserve0: " + dexes[i].reserve0, "Reserve1: " + dexes[i].reserve1);
       let amountOut = this.getAmountOut(dexes[i].reserve0, dexes[i].reserve1, tradeSize);
-      console.log("Amount out: " + amountOut);
+      // console.log("Amount out: " + amountOut);
       if (amountOut > maximumOutcome) {
         maximumOutcome = amountOut;
         maximumOutcomeDex = dexes[i].name;
@@ -215,12 +219,12 @@ export class TradeService {
       reserve1: await this.getPoolLiquidity(this.illiquidDexContract, sellToken, buyToken)
     }
     console.log(buyToken, sellToken);
-    let uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == buyToken && m.token1.symbol == sellToken);
+    let uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == sellToken && m.token1.symbol == buyToken);
     console.log(this.uniswapService.markets);
     if (!uniswapMarket) {
       console.log(uniswapMarket);
-      uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == sellToken && m.token1.symbol == buyToken);
-      swap = false;
+      uniswapMarket = this.uniswapService.markets.find((m) => m.token0.symbol == buyToken && m.token1.symbol == sellToken);
+      swap = true;
     }
     console.log(uniswapMarket);
     let uniswapPairLiquidity: Dex = {
@@ -259,24 +263,29 @@ export class TradeService {
       // await dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).send({ from: this.account, gas: 6721975 }),
       // dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).encodeABI();
       tx = dexContract.methods.swap(sellTokenAddress, buyTokenAddress, tradeSize).send.request({ from: this.account });
+      return tx;
     } else {
       // Mock the trade, since we can't execute it on Uniswap
       // await buyToken.methods.approve(this.account, tradeSize).send({ from: PUBLIC_KEY9, gas: 67210 });
+      const transferData = buyToken.methods.transfer(this.account, tradeSize).encodeABI();
 
       let transactionObject = {
-        from: PUBLIC_KEY9,
+        from: PUBLIC_KEY_9_DESKTOP,
         to: this.account,
         gasPrice: 20000000000,
         gas: 67210,
         value: 0,
-        data: buyToken.methods.transfer(this.account, tradeSize).encodeABI()
+        data: transferData
       };
-      const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, PRIVATE_KEY9);
-      tx = this.web3.eth.sendSignedTransaction.request(signedTransaction.rawTransaction)
-      console.log("Mocked transaction: ", tx);
-      // this.transactions.push(tx) 
+      const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, PRIVATE_KEY_9_DESKTOP);
+      const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+      console.log("Mocked transaction: ", transactionReceipt);
+      // GET BALANCE OF TOKENS
+      const balance = await buyToken.methods.balanceOf(PUBLIC_KEY_9_DESKTOP).call();
+      console.log("Balance of token: " + balance);
+      const balance2 = await sellToken.methods.balanceOf(PUBLIC_KEY_9_DESKTOP).call();
+      console.log("Balance of token: " + balance2);
     }
-    return tx;
   }
 
   async tokenSwap(buyToken: string, sellToken: string, tradeSize: number) {
@@ -307,16 +316,18 @@ export class TradeService {
             this.illiquidDexContract
           );
         } else if (exchange === "uniswap") {
-          tx = await this.executeTrade(
+          await this.executeTrade(
             this.usdcTokenContract,
             this.priceIndexService.getToken(sellToken, false),
             dexTradeSize,
             null
           );
         }
-        await tx;
-        console.log("tx", tx);
-        batch.add(tx);
+        if (tx) {
+          await tx;
+          console.log("tx", tx);
+          batch.add(tx);
+        }
       }
       for (let [exchange, dexTradeSize] of Object.entries(liquidityObject2)) {
         if (exchange === "liquidDex") {
@@ -334,16 +345,18 @@ export class TradeService {
             this.illiquidDexContract
           );
         } else if (exchange === "uniswap") {
-          tx = await this.executeTrade(
+          await this.executeTrade(
             this.priceIndexService.getToken(sellToken, false),
             this.usdcTokenContract,
             dexTradeSize,
             null
           );
         }
-        await tx;
-        console.log("tx", tx);
-        batch.add(tx);
+        if (tx) {
+          await tx;
+          console.log("tx", tx);
+          batch.add(tx);
+        }
       }
     } else {
       const liquidityObject = await this.findBestLiquidity(buyToken, sellToken, tradeSize, false);
@@ -366,16 +379,18 @@ export class TradeService {
             this.illiquidDexContract
           );
         } else if (exchange === "uniswap" && dexTradeSize > 0) {
-          tx = await this.executeTrade(
+          await this.executeTrade(
             this.priceIndexService.getToken(sellToken, false),
             this.priceIndexService.getToken(buyToken, false),
             dexTradeSize,
             null
           );
         }
-        await tx;
-        console.log("tx", tx);
-        batch.add(tx);
+        if (tx) {
+          await tx;
+          console.log("tx", tx);
+          batch.add(tx);
+        }
       }
     }
     // Execute the transactions in a single batch
@@ -401,9 +416,9 @@ export class TradeService {
       return;
     }
 
-    const randomTradeAccount8 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY8);
+    const randomTradeAccount8 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY8_LAPTOP);
     this.web3.eth.accounts.wallet.add(randomTradeAccount8);
-    const randomTradeAccount9 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY9);
+    const randomTradeAccount9 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY9_LAPTOP);
     this.web3.eth.accounts.wallet.add(randomTradeAccount9);
 
     const accounts = await this.web3.eth.getAccounts();

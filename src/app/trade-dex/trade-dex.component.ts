@@ -29,8 +29,8 @@ export class TradeDexComponent {
     { name: 'Chainlink', ticker: 'LINK', image: '/assets/images/chainlink.png' },
     { name: 'Sushi Swap', ticker: 'SUSHI', image: '/assets/images/sushiswap.png' },
   ];
-  selectedTokenSell: any = this.tokens[3];
-  selectedTokenBuy: any = this.tokens[2];
+  selectedTokenSell: any = this.tokens[2];
+  selectedTokenBuy: any = this.tokens[3];
   tokensSell: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenBuy.ticker);
   tokensBuy: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenSell.ticker);
 
