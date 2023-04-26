@@ -41,14 +41,24 @@ export class TradePricesComponent {
     this.uniswapData = this.uniswapService.getUniswapData();
     this.dydxData = this.dydxService.getPairs();
     this.tradeData = await this.priceIndexService.getPrices();
-    // setInterval(async () => {
-    //   this.uniswapData = this.uniswapService.getUniswapData();
-    //   this.dydxData = this.dydxService.getPairs();
-    //   this.tradeData = await this.priceIndexService.getPrices();
-    //   setTimeout(() => {
-    //     this.parseData();
-    //   }, 3000);
-    // }, 7000);
+    setTimeout(() => {
+      this.parseData();
+    }, 1000);
+    setInterval(async () => {
+      const tempUniswapData = this.uniswapService.getUniswapData();
+      // console.log(tempUniswapData);
+      if (tempUniswapData.length !== 0) {
+        this.uniswapData = tempUniswapData;
+      }
+      const tempDydxData = this.dydxService.getPairs();
+      if (tempDydxData.length !== 0) {
+        this.dydxData = tempDydxData;
+      }
+      this.tradeData = await this.priceIndexService.getPrices();
+      setTimeout(() => {
+        this.parseData();
+      }, 1000);
+    }, 10000);
 
   }
 

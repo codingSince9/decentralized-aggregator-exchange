@@ -24,7 +24,6 @@ contract FullyLiquidDecentralizedExchange {
     mapping(address => bool) public supportedTokens;
 
     event TokenSwap(
-        address indexed buyer,
         address indexed tokenSold,
         address indexed tokenBought,
         uint256 amountSold,
@@ -155,18 +154,12 @@ contract FullyLiquidDecentralizedExchange {
                 "Token transfer failed"
             );
             require(
-                IERC20(tokenBought).transfer(msg.sender, amountBought),
+                IERC20(tokenBought).approve(msg.sender, amountBought),
                 "Token transfer failed"
             );
         }
         reserves[tokenSold][tokenBought] += amountSold;
         reserves[tokenBought][tokenSold] -= amountBought;
-        emit TokenSwap(
-            msg.sender,
-            tokenSold,
-            tokenBought,
-            amountSold,
-            amountBought
-        );
+        emit TokenSwap(tokenSold, tokenBought, amountSold, amountBought);
     }
 }

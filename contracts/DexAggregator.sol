@@ -6,46 +6,60 @@ import "./NotSoLiquidDex.sol";
 
 contract DexAggregator {
     string public name = "Decentralized Exchange Aggregator";
-    FullyLiquidDecentralizedExchange FullyLiquidDex;
-    NotSoLiquidDecentralizedExchange NotSoLiquidDex;
+    FullyLiquidDecentralizedExchange public FullyLiquidDex;
+    NotSoLiquidDecentralizedExchange public NotSoLiquidDex;
 
-    constructor(
-        address _link,
-        address _matic,
-        address _sushi,
-        address _usdc,
-        address _wbtc
-    ) {
-        FullyLiquidDex = new FullyLiquidDecentralizedExchange(
-            _link,
-            _matic,
-            _sushi,
-            _usdc,
-            _wbtc
-        );
-        NotSoLiquidDex = new NotSoLiquidDecentralizedExchange(
-            _link,
-            _matic,
-            _sushi,
-            _usdc,
-            _wbtc
-        );
+    constructor(address _fullyLiquidDex, address _notSoLiquidDex) {
+        FullyLiquidDex = FullyLiquidDecentralizedExchange(_fullyLiquidDex);
+        NotSoLiquidDex = NotSoLiquidDecentralizedExchange(_notSoLiquidDex);
     }
 
-    function callContracts() public returns (uint, string memory) {
-        (bool successA, bytes memory resultA) = address(FullyLiquidDex).call(
-            abi.encodeWithSignature("swap()")
-        );
-        require(successA, "ContractA function call failed");
-
-        (bool successB, bytes memory resultB) = address(NotSoLiquidDex).call(
-            abi.encodeWithSignature("swap()")
-        );
-        require(successB, "ContractB function call failed");
-
-        uint result1 = abi.decode(resultA, (uint));
-        string memory result2 = abi.decode(resultB, (string));
-
-        return (result1, result2);
+    function executeSwaps(
+        bool[] memory isLiquid,
+        address[] memory tokenSold,
+        address[] memory tokenBought,
+        uint256[] memory amountSold
+    ) public {
+        address liquidDex = address(FullyLiquidDex);
+        address notSoLiquidDex = address(NotSoLiquidDex);
+        for (uint i = 0; i < isLiquid.length; i++) {
+            if (isLiquid[i]) {
+                IERC20(tokenSold[i]).approve(liquidDex, amountSold[i]);
+                FullyLiquidDex.swap(
+                    tokenSold[i],
+                    tokenBought[i],
+                    amountSold[i]
+                );
+            } else {
+                IERC20(tokenSold[i]).approve(notSoLiquidDex, amountSold[i]);
+                NotSoLiquidDex.swap(
+                    tokenSold[i],
+                    tokenBought[i],
+                    amountSold[i]
+                );
+            }
+            if (i == isLiquid.length - 1) {
+                uint256 liquidDexAllowance = IERC20(tokenBought[i]).allowance(
+                    liquidDex,
+                    address(this)
+                );
+                uint256 notSoLiquidDexAllowance = IERC20(tokenBought[i])
+                    .allowance(notSoLiquidDex, address(this));
+                if (liquidDexAllowance > 0) {
+                    IERC20(tokenBought[i]).transferFrom(
+                        liquidDex,
+                        msg.sender,
+                        liquidDexAllowance
+                    );
+                }
+                if (notSoLiquidDexAllowance > 0) {
+                    IERC20(tokenBought[i]).transferFrom(
+                        notSoLiquidDex,
+                        msg.sender,
+                        notSoLiquidDexAllowance
+                    );
+                }
+            }
+        }
     }
 }

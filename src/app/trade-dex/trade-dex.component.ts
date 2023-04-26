@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { PriceIndexService } from '../price-index.service';
 import { TradeService } from '../trade.service';
+import { NotificationComponent } from '../notification/notification.component';
 
 @Component({
   selector: 'app-trade-dex',
@@ -12,15 +13,17 @@ export class TradeDexComponent {
   constructor(
     private priceIndexService: PriceIndexService,
     private tradeService: TradeService,
+    private notificationComponent: NotificationComponent
   ) { }
 
-
+  // @ViewChild('popup') popupElement!: ElementRef;
   tokenAmountToSpend: number = 0;
   tokenAmountToReceive: number = 0;
   spendTokenBalance: number = 0;
   receiveTokenBalance: number = 0;
   showDivSell: boolean = false;
   showDivBuy: boolean = false;
+  executingTrade: boolean = false;
   tokens: any[] = [
     { name: 'Bitcoin', ticker: 'WBTC', image: '/assets/images/bitcoin.png' },
     // { name: 'Ethereum', ticker: 'ETH', image: '/assets/images/ethereum.png' },
@@ -30,7 +33,7 @@ export class TradeDexComponent {
     { name: 'Sushi Swap', ticker: 'SUSHI', image: '/assets/images/sushiswap.png' },
   ];
   selectedTokenSell: any = this.tokens[2];
-  selectedTokenBuy: any = this.tokens[3];
+  selectedTokenBuy: any = this.tokens[1];
   tokensSell: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenBuy.ticker);
   tokensBuy: any[] = this.tokens.filter((token) => token.ticker !== this.selectedTokenSell.ticker);
 
@@ -38,16 +41,27 @@ export class TradeDexComponent {
     this.getBalances();
   }
 
+  // ngAfterViewInit() {
+  //   document.addEventListener('click', (event) => {
+  //     if (!this.popupElement.nativeElement.contains(event.target)) {
+  //       this.showDivSell = false;
+  //       this.showDivBuy = false;
+  //     }
+  //   });
+  // }
+
   selectTokenSell(token: any) {
     this.selectedTokenSell = token;
     this.showDivSell = false;
     this.updateTokensToShow();
+    this.getBalances();
     this.calculateTokenPrice(this.tokenAmountToSpend);
   }
   selectTokenBuy(token: any) {
     this.selectedTokenBuy = token;
     this.showDivBuy = false;
     this.updateTokensToShow();
+    this.getBalances();
     this.calculateTokenPrice(this.tokenAmountToSpend);
   }
 
@@ -133,11 +147,17 @@ export class TradeDexComponent {
   }
 
   swapTokens = async () => {
-    await this.tradeService.tokenSwap(
+    // disable button while executing trade
+
+
+    this.executingTrade = true;
+    const outcome = await this.tradeService.tokenSwap(
       this.selectedTokenBuy.ticker,
       this.selectedTokenSell.ticker,
       this.tokenAmountToSpend
     )
+    this.notificationComponent.showNotification(outcome, this.tokenAmountToReceive, this.selectedTokenBuy.ticker);
     this.getBalances();
+    this.executingTrade = false;
   }
 }

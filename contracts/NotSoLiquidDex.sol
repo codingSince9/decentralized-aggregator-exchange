@@ -24,7 +24,6 @@ contract NotSoLiquidDecentralizedExchange {
     mapping(address => bool) public supportedTokens;
 
     event TokenSwap(
-        address indexed seller,
         address indexed tokenSold,
         address indexed tokenBought,
         uint256 amountSold,
@@ -125,7 +124,6 @@ contract NotSoLiquidDecentralizedExchange {
             supportedTokens[tokenSold] && supportedTokens[tokenBought],
             "Invalid token pair"
         );
-        // uint256 amountSold = msg.value;
         uint256 amountSold = _amountSold;
         uint256 amountBought = getAmountOut(tokenSold, tokenBought, amountSold);
         require(amountBought > 0, "Not enough liquidity in the pool");
@@ -155,18 +153,12 @@ contract NotSoLiquidDecentralizedExchange {
                 "Token transfer failed"
             );
             require(
-                IERC20(tokenBought).transfer(msg.sender, amountBought),
+                IERC20(tokenBought).approve(msg.sender, amountBought),
                 "Token transfer failed"
             );
         }
         reserves[tokenSold][tokenBought] += amountSold;
         reserves[tokenBought][tokenSold] -= amountBought;
-        emit TokenSwap(
-            msg.sender,
-            tokenSold,
-            tokenBought,
-            amountSold,
-            amountBought
-        );
+        emit TokenSwap(tokenSold, tokenBought, amountSold, amountBought);
     }
 }

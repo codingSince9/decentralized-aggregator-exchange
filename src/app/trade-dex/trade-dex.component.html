@@ -1,9 +1,9 @@
-<div id="content" class="my-main">
+<div id="content">
     <div class="my-form">
         <div class="my-divs">
             <div class="my-div-5">
                 <div class="my-div-51">
-                    <button class="my-button-511" (click)="showDivSell = !showDivSell">
+                    <button class="my-button-511" (click)="showDivSell = !showDivSell" #popup>
                         <img [src]="selectedTokenSell.image" [alt]="selectedTokenSell.name">&nbsp;&nbsp;{{selectedTokenSell.ticker}}
                     </button>
                     <div *ngIf="showDivSell" class="popup">
@@ -12,7 +12,7 @@
                             <span>{{token.name}}</span>
                         </div>
                     </div>
-                    <input type="number" class="my-input-512" placeholder="0.0" minlength="1" maxlength="10"
+                    <input type="number" class="my-input" placeholder="0.0" minlength="1" maxlength="10"
                         [(ngModel)]="tokenAmountToSpend" (ngModelChange)="calculateTokenPrice($event)">
                 </div>
                 <div class="my-div-52" id="daiBalance">Balance: {{ spendTokenBalance }}</div>
@@ -24,7 +24,7 @@
             </div>
             <div class="my-div-5">
                 <div class="my-div-51">
-                    <button class="my-button-511" (click)="showDivBuy = !showDivBuy">
+                    <button class="my-button-511" (click)="showDivBuy = !showDivBuy" #popup>
                         <img [src]="selectedTokenBuy.image" [alt]="selectedTokenBuy.name">&nbsp;&nbsp;{{selectedTokenBuy.ticker}}
                     </button>
                     <div *ngIf="showDivBuy" class="popup">
@@ -33,12 +33,19 @@
                             <span>{{token.name}}</span>
                         </div>
                     </div>
-                    <input id="calculatedEth" class="my-input-512" placeholder="0.0" [value]="tokenAmountToReceive"
+                    <input type="number" id="calculatedEth" class="my-input" placeholder="0.0" [value]="tokenAmountToReceive"
                         disabled>
                 </div>
                 <div class="my-div-52" id="ethBalance">Balance: {{ receiveTokenBalance }}</div>
             </div>
-            <button class="my-button my-button-buy" (click)="swapTokens()">Swap</button>
+            <button class="my-button" (click)="swapTokens()" [disabled]="executingTrade">
+                <ng-container *ngIf="!executingTrade; else loadingSpinner" style="font-size: larger;">
+                    Swap
+                </ng-container>
+                <ng-template #loadingSpinner>
+                    <div class="loader"></div>
+                </ng-template>
+            </button>
         </div>
     </div>
 </div>

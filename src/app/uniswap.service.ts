@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ChainId, Token, WETH, Fetcher, Route, Trade, TokenAmount, TradeType } from '@uniswap/sdk'
 import { HttpClient } from '@angular/common/http';
 
-interface Market {
+export interface Market {
   token0: {
     id: string;
     name: string;

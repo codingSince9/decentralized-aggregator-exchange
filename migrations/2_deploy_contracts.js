@@ -1,3 +1,4 @@
+const DexAggregator = artifacts.require("DexAggregator");
 const FullyLiquidDex = artifacts.require("FullyLiquidDecentralizedExchange");
 const NotSoLiquidDex = artifacts.require("NotSoLiquidDecentralizedExchange");
 const Usdc = artifacts.require("./ERC20/Usdc");
@@ -48,17 +49,29 @@ module.exports = async function (deployer) {
   await sushi.transfer(notSoLiquidDex.address, "95000000000000000000000");
   await wbtc.transfer(notSoLiquidDex.address, "3550000000000000000000");
 
+
+  await deployer.deploy(
+    DexAggregator,
+    fullyLiquidDex.address,
+    notSoLiquidDex.address,
+  );
+
   // transfer all assets to 0xf9D88523Dc246a624394142285F5B5e7E9200C3C
   const account8 = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
   const account9 = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f";
-  await usdc.transfer(account8, "1000000000000000000000000");
-  await link.transfer(account8, "1000000000000000000000000");
-  await matic.transfer(account8, "1000000000000000000000000");
-  await sushi.transfer(account8, "1000000000000000000000000");
-  await wbtc.transfer(account8, "1000000000000000000000000");
-  await usdc.transfer(account9, "1000000000000000000000000");
-  await link.transfer(account9, "1000000000000000000000000");
-  await matic.transfer(account9, "1000000000000000000000000");
-  await sushi.transfer(account9, "1000000000000000000000000");
-  await wbtc.transfer(account9, "1000000000000000000000000");
+  await usdc.transfer(account8, "100000000000000000000000000");
+  await link.transfer(account8, "100000000000000000000000000");
+  await matic.transfer(account8, "100000000000000000000000000");
+  await sushi.transfer(account8, "100000000000000000000000000");
+  await wbtc.transfer(account8, "100000000000000000000000000");
+  await usdc.transfer(account9, "100000000000000000000000000");
+  await link.transfer(account9, "100000000000000000000000000");
+  await matic.transfer(account9, "100000000000000000000000000");
+  await sushi.transfer(account9, "100000000000000000000000000");
+  await wbtc.transfer(account9, "100000000000000000000000000");
+
+  const userAccount = "0x39AB1B8f16dC30547697257c6F1A8C8F2c1F9a0d";
+  // 1000 and 50
+  await usdc.transfer(userAccount, "1000000000000000000000");
+  await link.transfer(userAccount, "50000000000000000000");
 };

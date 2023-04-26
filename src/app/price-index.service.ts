@@ -80,8 +80,8 @@ export class PriceIndexService {
     }
   }
 
-  getTokenPrice = async (tokenToBuy: string, tokenToSell: string, amount: string) => {
-    let price = await this.liquidDexContract.methods.getAmountOut(
+  getTokenPrice = async (dexContract: any, tokenToBuy: string, tokenToSell: string, amount: string) => {
+    let price = await dexContract.methods.getAmountOut(
       this.getToken(tokenToSell, true),
       this.getToken(tokenToBuy, true),
       this.web3.utils.toWei(amount, "ether")).call();

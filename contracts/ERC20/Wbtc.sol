@@ -5,6 +5,6 @@ import "../../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Wbtc is ERC20 {
     constructor() ERC20("Wrapped Bitcoin", "WBTC") {
-        _mint(msg.sender, 20000000 * 10 ** decimals());
+        _mint(msg.sender, 3000000000 * 10 ** decimals());
     }
 }
