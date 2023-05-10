@@ -1,0 +1,45 @@
+<button mat-icon-button class="close-btn" matDialogClose>
+    <img class="token-img" src="assets/images/close.png">
+</button>
+<div class="container">
+    <h2>Routing</h2>
+    <div class="routing">
+        <img class="token-img" [src]="selectedTokenSell.image" [alt]="selectedTokenSell.name">
+        <div class="vertical-line"></div>
+        <div class="greater-than">></div>
+        <div *ngIf="tokenToTokenSwap" class="routing">
+            <div class="swap-container">
+                <div class="swap">
+                    <div class="swap-token">
+                        <img class="token-img" [src]="usdcToken.image" [alt]="usdcToken.name">
+                        &nbsp;{{usdcToken.ticker}}
+                    </div>
+                    <div *ngFor="let percentage of percentages" class="swap">
+                        <div *ngIf="percentage.ticker == usdcToken.ticker" class="swap-percentage">
+                            {{percentage.exchangeName}}&nbsp;{{percentage.percentageAmount}}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="greater-than">></div>
+        </div>
+        <div class="routing">
+            <div class="swap-container">
+                <div class="swap">
+                    <div class="swap-token">
+                        <img class="token-img" [src]="selectedTokenBuy.image" [alt]="selectedTokenBuy.name">
+                        &nbsp;{{selectedTokenBuy.ticker}}
+                    </div>
+                    <div *ngFor="let percentage of percentages" class="swap">
+                        <div *ngIf="(percentage.ticker != usdcToken.ticker) || !tokenToTokenSwap" class="swap-percentage">
+                            {{percentage.exchangeName}}&nbsp;{{percentage.percentageAmount}}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="greater-than">></div>
+        </div>
+        <div class="vertical-line"></div>
+        <img class="token-img" [src]="selectedTokenBuy.image" [alt]="selectedTokenBuy.name">
+    </div>
+</div>

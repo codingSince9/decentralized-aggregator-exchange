@@ -1,8 +1,14 @@
 <div class="div-price">
-    <button class="btn" (click)="toggleTable()">
-        <span class="btn-icon"><img class="exchange-image" src="assets/images/exchange.png" aria-hidden="true" /></span>
-        <span class="btn-text">&nbsp;{{showTable ? 'Hide prices' : 'Show prices'}}</span>
-    </button>
+    <div class="button-div">
+        <button *ngIf="showTable" class="btn" (click)="refreshPrices()">
+            <span class="btn-icon"><img class="button-image" src="assets/images/refresh.png" aria-hidden="true" /></span>
+            <span class="btn-text">&nbsp;Refresh Prices</span>
+        </button>
+        <button class="btn" (click)="toggleTable()">
+            <span class="btn-icon"><img class="button-image" src="assets/images/exchange.png" aria-hidden="true" /></span>
+            <span class="btn-text">&nbsp;{{showTable ? 'Hide prices' : 'Show prices'}}</span>
+        </button>
+    </div>
     <table *ngIf="showTable">
         <tr>
             <th>Exchange Name</th>

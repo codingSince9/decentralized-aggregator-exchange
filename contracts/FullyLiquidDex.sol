@@ -70,28 +70,28 @@ contract FullyLiquidDecentralizedExchange {
         // x (link) = 7 000 000
         // y (usdc) = 50 000 000
         // k (constant product) = 3,5×10¹²
-        // price per ETH = 7,14
+        // price per LINK = 7,14
 
         reserves[address(matic)][address(usdc)] = 9000000000000000000000000;
         reserves[address(usdc)][address(matic)] = 10000000000000000000000000;
         // x (matic) = 9 000 000
         // y (usdc) = 10 000 000
         // k (constant product) = 900 000 000 000
-        // price per ETH = 1,11
+        // price per MATIC = 1,11
 
         reserves[address(sushi)][address(usdc)] = 9500000000000000000000000;
         reserves[address(usdc)][address(sushi)] = 10000000000000000000000000;
         // x (sushi) = 9 500 000
         // y (usdc) = 10 000 000
         // k (constant product) = 950 000 000 000
-        // price per ETH = 1,15
+        // price per SUSHI = 1,15
 
         reserves[address(wbtc)][address(usdc)] = 35500000000000000000000;
         reserves[address(usdc)][address(wbtc)] = 1000000000000000000000000000;
         // x (wbtc) = 35 500
         // y (usdc) = 1 000 000 000
         // k (constant product) = 3,55×10¹³
-        // price per ETH = 28 170
+        // price per WBTC = 28 170
     }
 
     function getAmountOut(

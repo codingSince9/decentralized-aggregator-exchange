@@ -9,28 +9,39 @@ import { TradePricesComponent } from './trade-prices/trade-prices.component';
 import { UniswapService } from './uniswap.service';
 import { DydxService } from './dydx.service';
 import { PriceIndexService } from './price-index.service';
-import { NotificationComponent } from './notification/notification.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { TradeRoutingComponent } from './trade-routing/trade-routing.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AvailableTokensComponent } from './available-tokens/available-tokens.component';
+
 
 @NgModule({
   declarations: [
     AppComponent,
     TradeDexComponent,
     TradePricesComponent,
-    NotificationComponent,
+    TradePricesComponent,
+    TradeRoutingComponent,
+    AvailableTokensComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
     FormsModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatDialogModule,
+    MatIconModule,
+    BrowserAnimationsModule
   ],
   providers: [
     UniswapService,
     DydxService,
     PriceIndexService,
-    NotificationComponent
+    TradeDexComponent,
+    TradePricesComponent
   ],
   bootstrap: [AppComponent]
 })

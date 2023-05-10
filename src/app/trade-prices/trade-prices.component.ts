@@ -23,7 +23,7 @@ interface PairData {
 export class TradePricesComponent {
   uniswapData: any;
   dydxData: any;
-  tradeData: any;
+  myDexesData: any;
   public exchangesData: any;
   tokenAmount: number = 1;
   showTable: boolean = false;
@@ -40,30 +40,46 @@ export class TradePricesComponent {
     this.tradeService.loadBlockchainData();
     this.uniswapData = this.uniswapService.getUniswapData();
     this.dydxData = this.dydxService.getPairs();
-    this.tradeData = await this.priceIndexService.getPrices();
+    this.myDexesData = await this.priceIndexService.getPrices();
     setTimeout(() => {
       this.parseData();
     }, 1000);
-    setInterval(async () => {
-      const tempUniswapData = this.uniswapService.getUniswapData();
-      // console.log(tempUniswapData);
-      if (tempUniswapData.length !== 0) {
-        this.uniswapData = tempUniswapData;
-      }
-      const tempDydxData = this.dydxService.getPairs();
-      if (tempDydxData.length !== 0) {
-        this.dydxData = tempDydxData;
-      }
-      this.tradeData = await this.priceIndexService.getPrices();
-      setTimeout(() => {
-        this.parseData();
-      }, 1000);
-    }, 10000);
+    // setInterval(async () => {
+    //   const tempUniswapData = this.uniswapService.getUniswapData();
+    //   // console.log(tempUniswapData);
+    //   if (tempUniswapData.length !== 0) {
+    //     this.uniswapData = tempUniswapData;
+    //   }
+    //   const tempDydxData = this.dydxService.getPairs();
+    //   if (tempDydxData.length !== 0) {
+    //     this.dydxData = tempDydxData;
+    //   }
+    //   this.myDexesData = await this.priceIndexService.getPrices();
+    //   await new Promise(f => setTimeout(f, 1000));
+    //   this.parseData();
+    // }, 10000);
 
   }
 
   toggleTable() {
     this.showTable = !this.showTable;
+  }
+
+  async refreshPrices() {
+    console.log("refreshing prices");
+    const tempUniswapData = this.uniswapService.getUniswapData();
+    // console.log(tempUniswapData);
+    if (tempUniswapData.length !== 0) {
+      this.uniswapData = tempUniswapData;
+    }
+    const tempDydxData = this.dydxService.getPairs();
+    if (tempDydxData.length !== 0) {
+      this.dydxData = tempDydxData;
+    }
+    this.myDexesData = await this.priceIndexService.getPrices();
+    await new Promise(f => setTimeout(f, 1000));
+    this.parseData();
+    console.log("refreshed prices");
   }
 
   parseData = () => {
@@ -113,11 +129,11 @@ export class TradePricesComponent {
       exchangeName: "Fully Liquid DEX",
       pairs: []
     }
-    for (let i = 0; i < this.tradeData.length; i++) {
-      if (this.tradeData[i].isLiquid === false) continue;
+    for (let i = 0; i < this.myDexesData.length; i++) {
+      if (this.myDexesData[i].isLiquid === false) continue;
       let pairData: PairData = {
-        pair: this.tradeData[i].tokenPair,
-        price: this.tradeData[i].indexPrice
+        pair: this.myDexesData[i].tokenPair,
+        price: this.myDexesData[i].indexPrice
       }
       liquidDexData.pairs.push(pairData);
       liquidDexData.pairs.sort((a, b) => (a.pair > b.pair) ? 1 : -1);
@@ -128,11 +144,11 @@ export class TradePricesComponent {
       exchangeName: "Illiquid DEX",
       pairs: []
     }
-    for (let i = 0; i < this.tradeData.length; i++) {
-      if (this.tradeData[i].isLiquid === true) continue;
+    for (let i = 0; i < this.myDexesData.length; i++) {
+      if (this.myDexesData[i].isLiquid === true) continue;
       let pairData: PairData = {
-        pair: this.tradeData[i].tokenPair,
-        price: this.tradeData[i].indexPrice
+        pair: this.myDexesData[i].tokenPair,
+        price: this.myDexesData[i].indexPrice
       }
       illiquidDexData.pairs.push(pairData);
       illiquidDexData.pairs.sort((a, b) => (a.pair > b.pair) ? 1 : -1);

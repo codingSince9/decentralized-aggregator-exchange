@@ -1,0 +1,43 @@
+.close-btn {
+    float: right;
+    margin: 10px;
+    border: none;
+    background-color: transparent;
+    outline: none;
+}
+
+.close-btn:hover {
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+}
+
+.container {
+    padding: 20px 0 20px 20px;
+}
+
+.horizontal-line {
+    margin-right: 20px;
+}
+
+.row {
+    padding: 10px;
+    width: 80%;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.row:hover {
+    background-color: #f5f5f5;
+}
+
+.token-img {
+    width: 40px;
+    height: 40px;
+}
+
+.close-img {
+    width: 30px;
+    height: 30px;
+}

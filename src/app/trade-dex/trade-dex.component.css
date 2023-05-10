@@ -172,3 +172,42 @@ span {
         transform: rotate(360deg);
     }
 }
+
+.fullscreen-image {
+    width: 20px;
+    height: 20px;
+}
+
+.fullscreen-button {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    transition: 0.4s;
+    padding-left: 15px;
+}
+
+.fullscreen-button:hover {
+    cursor: pointer;
+}
+
+.routes-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: rgb(114, 114, 114);
+}
+
+.route {
+    margin-left: 10px;
+}
+
+.pathfinder-route {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.pathfinder-route:hover {
+    cursor: pointer;
+    color: black;
+}

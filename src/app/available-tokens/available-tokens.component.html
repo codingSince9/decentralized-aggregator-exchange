@@ -1,0 +1,11 @@
+<button mat-icon-button class="close-btn" matDialogClose>
+    <img class="close-img" src="assets/images/close.png">
+</button>
+<div class="container">
+    <h6>Select token {{openedTokenToSell ? "to Sell" : "to Buy"}}:</h6>
+    <hr class="horizontal-line">
+    <div *ngFor="let token of tokensToShow" class="row" (click)="selectToken(token)">
+        <img class="token-img" [src]="token.image" [alt]="token.name">
+        <span>&nbsp;{{token.name}}</span>
+    </div>
+</div>

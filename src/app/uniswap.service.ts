@@ -174,19 +174,20 @@ export class UniswapService {
     return this.markets;
   }
 
-  getPairLiquidity(token0: string, token1: string) {
-    const market = this.markets.find((m) => m.token0.symbol == token0 && m.token1.symbol == token1);
-    console.log(market);
+  getTokenReserves(token0: string, token1: string) {
+    let market = this.markets.find((m) => m.token0.symbol == token0 && m.token1.symbol == token1);
     if (market) {
       return {
-        symbol0: market.token0.symbol,
-        symbol1: market.token1.symbol,
-        reserve0: market.reserve0,
-        reserve1: market.reserve1,
-        k: market.reserve0 * market.reserve1,
-        eth_price: this.ETH_PRICE
+        reserve0: Number(market.reserve0),
+        reserve1: market.reserve1 * this.ETH_PRICE,
+      };
+    } else {
+      market = this.markets.find((m) => m.token0.symbol == token1 && m.token1.symbol == token0) as Market;
+      // swapping token0 and token1
+      return {
+        reserve0: market.reserve1 * this.ETH_PRICE,
+        reserve1: Number(market.reserve0),
       };
     }
-    return 0;
   }
 }
