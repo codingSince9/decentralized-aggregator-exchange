@@ -59,16 +59,17 @@ module.exports = async function (deployer) {
   // transfer all assets to 0xf9D88523Dc246a624394142285F5B5e7E9200C3C
   const account8 = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
   const account9 = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f";
-  await usdc.transfer(account8, "100000000000000000000000000");
-  await link.transfer(account8, "100000000000000000000000000");
-  await matic.transfer(account8, "100000000000000000000000000");
-  await sushi.transfer(account8, "100000000000000000000000000");
-  await wbtc.transfer(account8, "100000000000000000000000000");
-  await usdc.transfer(account9, "100000000000000000000000000");
-  await link.transfer(account9, "100000000000000000000000000");
-  await matic.transfer(account9, "100000000000000000000000000");
-  await sushi.transfer(account9, "100000000000000000000000000");
-  await wbtc.transfer(account9, "100000000000000000000000000");
+  // 10 000 000 000
+  await usdc.transfer(account8, "10000000000000000000000000000");
+  await link.transfer(account8, "10000000000000000000000000000");
+  await matic.transfer(account8, "10000000000000000000000000000");
+  await sushi.transfer(account8, "10000000000000000000000000000");
+  await wbtc.transfer(account8, "10000000000000000000000000000");
+  await usdc.transfer(account9, "10000000000000000000000000000");
+  await link.transfer(account9, "10000000000000000000000000000");
+  await matic.transfer(account9, "10000000000000000000000000000");
+  await sushi.transfer(account9, "10000000000000000000000000000");
+  await wbtc.transfer(account9, "10000000000000000000000000000");
 
   const userAccount = "0x39AB1B8f16dC30547697257c6F1A8C8F2c1F9a0d";
   // 1000 and 50

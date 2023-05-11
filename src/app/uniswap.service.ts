@@ -180,6 +180,8 @@ export class UniswapService {
       return {
         reserve0: Number(market.reserve0),
         reserve1: market.reserve1 * this.ETH_PRICE,
+        token0Price: market.token0Price,
+        token1Price: market.token1Price
       };
     } else {
       market = this.markets.find((m) => m.token0.symbol == token1 && m.token1.symbol == token0) as Market;
@@ -187,6 +189,8 @@ export class UniswapService {
       return {
         reserve0: market.reserve1 * this.ETH_PRICE,
         reserve1: Number(market.reserve0),
+        token0Price: market.token0Price,
+        token1Price: market.token1Price
       };
     }
   }

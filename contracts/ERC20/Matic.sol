@@ -5,6 +5,6 @@ import "../../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Matic is ERC20 {
     constructor() ERC20("Polygon Network Token", "MATIC") {
-        _mint(msg.sender, 3000000000 * 10 ** decimals());
+        _mint(msg.sender, 30000000000 * 10 ** decimals());
     }
 }

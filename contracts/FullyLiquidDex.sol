@@ -115,6 +115,21 @@ contract FullyLiquidDecentralizedExchange {
         return numerator / denominator;
     }
 
+    function executeArbitrage(
+        address tokenSold,
+        address tokenBought,
+        uint256 amount0,
+        uint256 amount1
+    ) public {
+        require(
+            supportedTokens[tokenSold] && supportedTokens[tokenBought],
+            "Invalid token pair"
+        );
+
+        reserves[tokenSold][tokenBought] = amount0;
+        reserves[tokenBought][tokenSold] = amount1;
+    }
+
     function swap(
         address tokenSold,
         address tokenBought,
