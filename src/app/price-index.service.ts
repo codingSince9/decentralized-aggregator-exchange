@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import Web3 from 'web3';
+import { USDC_TOKEN_SYMBOL } from './trade.service';
 
 declare let require: any;
 declare let window: any;
@@ -69,7 +70,7 @@ export class PriceIndexService {
       case "ETH":
         contract = this.liquidDexContract;
         break;
-      case "USDC":
+      case USDC_TOKEN_SYMBOL:
         contract = this.usdcTokenContract;
         break;
     }

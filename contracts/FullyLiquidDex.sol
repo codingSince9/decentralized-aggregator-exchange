@@ -19,7 +19,6 @@ contract FullyLiquidDecentralizedExchange {
 
     address public owner;
     mapping(address => mapping(address => uint256)) public reserves;
-    mapping(address => IERC20) public tokens;
     // mapping for supported tokens
     mapping(address => bool) public supportedTokens;
 
@@ -51,15 +50,9 @@ contract FullyLiquidDecentralizedExchange {
         usdc = IERC20(_usdc);
         wbtc = IERC20(_wbtc);
 
-        tokens[address(link)] = link;
-        tokens[address(matic)] = matic;
-        tokens[address(sushi)] = sushi;
-        tokens[address(usdc)] = usdc;
-        tokens[address(wbtc)] = wbtc;
-
+        // x * y = k
         reserves[address(this)][address(usdc)] = 97000000000000000000000;
         reserves[address(usdc)][address(this)] = 170000000000000000000000000;
-        // x * y = k
         // x (eth) = 97 000
         // y (usdc) = 170 000 000
         // k (constant product) = 164 900 000 000
@@ -67,30 +60,18 @@ contract FullyLiquidDecentralizedExchange {
 
         reserves[address(link)][address(usdc)] = 7000000000000000000000000;
         reserves[address(usdc)][address(link)] = 50000000000000000000000000;
-        // x (link) = 7 000 000
-        // y (usdc) = 50 000 000
-        // k (constant product) = 3,5×10¹²
         // price per LINK = 7,14
 
         reserves[address(matic)][address(usdc)] = 9000000000000000000000000;
         reserves[address(usdc)][address(matic)] = 10000000000000000000000000;
-        // x (matic) = 9 000 000
-        // y (usdc) = 10 000 000
-        // k (constant product) = 900 000 000 000
         // price per MATIC = 1,11
 
         reserves[address(sushi)][address(usdc)] = 9500000000000000000000000;
         reserves[address(usdc)][address(sushi)] = 10000000000000000000000000;
-        // x (sushi) = 9 500 000
-        // y (usdc) = 10 000 000
-        // k (constant product) = 950 000 000 000
         // price per SUSHI = 1,15
 
         reserves[address(wbtc)][address(usdc)] = 35500000000000000000000;
         reserves[address(usdc)][address(wbtc)] = 1000000000000000000000000000;
-        // x (wbtc) = 35 500
-        // y (usdc) = 1 000 000 000
-        // k (constant product) = 3,55×10¹³
         // price per WBTC = 28 170
     }
 
@@ -118,16 +99,16 @@ contract FullyLiquidDecentralizedExchange {
     function executeArbitrage(
         address tokenSold,
         address tokenBought,
-        uint256 amount0,
-        uint256 amount1
+        uint256 newReserve0Amount,
+        uint256 newReserve1Amount
     ) public {
         require(
             supportedTokens[tokenSold] && supportedTokens[tokenBought],
             "Invalid token pair"
         );
 
-        reserves[tokenSold][tokenBought] = amount0;
-        reserves[tokenBought][tokenSold] = amount1;
+        reserves[tokenSold][tokenBought] = newReserve0Amount;
+        reserves[tokenBought][tokenSold] = newReserve1Amount;
     }
 
     function swap(

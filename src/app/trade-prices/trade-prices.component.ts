@@ -141,7 +141,7 @@ export class TradePricesComponent {
     this.exchangesData.push(liquidDexData);
 
     let illiquidDexData: ExchangeData = {
-      exchangeName: "Illiquid DEX",
+      exchangeName: "Non Liquid DEX",
       pairs: []
     }
     for (let i = 0; i < this.myDexesData.length; i++) {

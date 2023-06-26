@@ -39,6 +39,12 @@ const PRIVATE_KEY_8_LAPTOP = "76db17660b790ecc22ef00bbf93ce9c60989a7a9488aa6f6eb
 const PRIVATE_KEY_9_LAPTOP = "2979ee37a8723c4b0870240db55f154b4f43db048bace7da227206add2d7fd0d";
 const PRIVATE_KEY_8_DESKTOP = "9a4dde90a50d8243cfef4450d0783f8c6338850a1ad29688fbbe623ce71f12d7";
 const PRIVATE_KEY_9_DESKTOP = "eb428d5c8a8b5c2ee76c18c88f2828b7f86df212800f64f9fdeea26178c39867";
+const BUY_DIRECTION = "BUY";
+const SELL_DIRECTION = "SELL";
+export const USDC_TOKEN_SYMBOL = "USDC";
+const LIQUIDDEX_NAME = "liquidDex";
+const ILLIQUIDDEX_NAME = "illiquidDex";
+const UNISWAP_NAME = "uniswap";
 
 export interface SwapPercentages {
   name: string;
@@ -103,7 +109,7 @@ export class TradeService {
       value: 0,
       data: "transferData"
     };
-    if (direction == "BUY") {
+    if (direction == BUY_DIRECTION) {
       // meaning we are selling usdc tokens for another token
       transactionObject["data"] = this.usdcTokenContract.methods.transfer(this.dexAggregatorContract.options.address, tradeSize).encodeABI();
       console.log("TRANSFERING USDC TOKENS");
@@ -119,8 +125,8 @@ export class TradeService {
     const buyTokenAddress = this.priceIndexService.getToken(buyTokenSymbol, true);
     nonce = await this.web3.eth.getTransactionCount(tradeAccountPublicKey);
     const isLiquidArray = dexContract === this.liquidDexContract ? [true] : [false];
-    const tokenSoldArray = direction === "BUY" ? [buyTokenAddress] : [this.usdcTokenContract.options.address];
-    const tokenBoughtArray = direction === "BUY" ? [this.usdcTokenContract.options.address] : [buyTokenAddress];
+    const tokenSoldArray = direction === BUY_DIRECTION ? [buyTokenAddress] : [this.usdcTokenContract.options.address];
+    const tokenBoughtArray = direction === BUY_DIRECTION ? [this.usdcTokenContract.options.address] : [buyTokenAddress];
     const amountSoldArray = [tradeSize];
     console.log("nonce", nonce);
 
@@ -174,18 +180,18 @@ export class TradeService {
 
     // get price of token pair
     // console.log(this.uniswapService.markets);
-    // console.log(this.uniswapService.markets.find((m) => m.token0.symbol == "USDC" && m.token1.symbol == buyTokenSymbol) as Market);
-    // console.log(this.uniswapService.markets.find((m) => m.token0.symbol == buyTokenSymbol && m.token1.symbol == "USDC") as Market);
+    // console.log(this.uniswapService.markets.find((m) => m.token0.symbol == USDC_TOKEN_SYMBOL && m.token1.symbol == buyTokenSymbol) as Market);
+    // console.log(this.uniswapService.markets.find((m) => m.token0.symbol == buyTokenSymbol && m.token1.symbol == USDC_TOKEN_SYMBOL) as Market);
     // console.log(buyTokenSymbol.length);
     let swap = false;
-    const tokenPairPrice = await this.priceIndexService.getTokenPrice(dexContract, "USDC", buyTokenSymbol, "1");
-    let uniswapMarket = this.uniswapService.getTokenReserves("USDC", buyTokenSymbol);
+    const tokenPairPrice = await this.priceIndexService.getTokenPrice(dexContract, USDC_TOKEN_SYMBOL, buyTokenSymbol, "1");
+    let uniswapMarket = this.uniswapService.getTokenReserves(USDC_TOKEN_SYMBOL, buyTokenSymbol);
     const uniswapPairPrice = buyTokenSymbol == "WBTC" ? uniswapMarket.token1Price : uniswapMarket.token0Price as number;
     // check if the dex price is within 5% of the uniswap price
     const isUniswapPriceHigher = uniswapPairPrice > tokenPairPrice * 1.05;
     const isUniswapPriceLower = uniswapPairPrice < tokenPairPrice * 0.95;
-    const buyTokenBalance = await this.getTokenReserves(this.liquidDexContract, buyTokenSymbol, "USDC");
-    const sellTokenBalance = await this.getTokenReserves(this.liquidDexContract, "USDC", buyTokenSymbol);
+    const buyTokenBalance = await this.getTokenReserves(this.liquidDexContract, buyTokenSymbol, USDC_TOKEN_SYMBOL);
+    const sellTokenBalance = await this.getTokenReserves(this.liquidDexContract, USDC_TOKEN_SYMBOL, buyTokenSymbol);
     const constantProduct = buyTokenBalance * sellTokenBalance;
 
     if (isUniswapPriceHigher || isUniswapPriceLower) {
@@ -223,7 +229,7 @@ export class TradeService {
       console.log("Arbitrage Transaction:", transactionReceipt);
     } else {
       // Randomly decide whether to buy or sell
-      const direction = Math.random() >= 0.5 ? "BUY" : "SELL";
+      const direction = Math.random() >= 0.5 ? BUY_DIRECTION : SELL_DIRECTION;
       tradeSize = this.web3.utils.toWei(tradeSize.toString(), 'ether');
       this.executeRandomTrade(tradeAccountPublicKey, tradeAccountPrivateKey, dexContract, tradeSize, buyTokenSymbol, direction);
     }
@@ -293,18 +299,18 @@ export class TradeService {
 
   async findBestLiquidity(buyToken: string, sellToken: string, tradeSize: number, calculateAmount: boolean) {
     let liquidDexPairLiquidity: Dex = {
-      name: "liquidDex",
+      name: LIQUIDDEX_NAME,
       reserve0: await this.getTokenReserves(this.liquidDexContract, buyToken, sellToken),
       reserve1: await this.getTokenReserves(this.liquidDexContract, sellToken, buyToken)
     }
     let illiquidDexPairLiquidity: Dex = {
-      name: "illiquidDex",
+      name: ILLIQUIDDEX_NAME,
       reserve0: await this.getTokenReserves(this.illiquidDexContract, buyToken, sellToken),
       reserve1: await this.getTokenReserves(this.illiquidDexContract, sellToken, buyToken)
     }
     let uniswapTokenReserves = this.uniswapService.getTokenReserves(sellToken, buyToken);
     let uniswapPairLiquidity: Dex = {
-      name: "uniswap",
+      name: UNISWAP_NAME,
       reserve0: uniswapTokenReserves.reserve0,
       reserve1: uniswapTokenReserves.reserve1
     };
@@ -343,25 +349,25 @@ export class TradeService {
     let amountSoldArray: number[] = [];
     let amountSold = 0;
     for (let [exchange, dexTradeSize] of Object.entries(liquidityObject)) {
-      if (exchange === "liquidDex" && dexTradeSize > 0) {
+      if (exchange === LIQUIDDEX_NAME && dexTradeSize > 0) {
         amountSold = this.web3.utils.toWei(dexTradeSize.toString(), 'ether');
         isLiquidArray.push(true);
         amountSoldArray.push(amountSold);
         tokenSoldArray.push(this.priceIndexService.getToken(sellToken, true));
         tokenBoughtArray.push(this.usdcTokenContract.options.address);
-      } else if (exchange === "illiquidDex" && dexTradeSize > 0) {
+      } else if (exchange === ILLIQUIDDEX_NAME && dexTradeSize > 0) {
         amountSold = this.web3.utils.toWei(dexTradeSize.toString(), 'ether');
         isLiquidArray.push(false);
         amountSoldArray.push(amountSold);
         tokenSoldArray.push(this.priceIndexService.getToken(sellToken, true));
         tokenBoughtArray.push(this.usdcTokenContract.options.address);
-      } else if (exchange === "uniswap" && dexTradeSize > 0 && !multipleTrades) {
-        let tokenToDollarOutput = await this.findBestLiquidity("USDC", sellToken, dexTradeSize, true) as number;
+      } else if (exchange === UNISWAP_NAME && dexTradeSize > 0 && !multipleTrades) {
+        let tokenToDollarOutput = await this.findBestLiquidity(USDC_TOKEN_SYMBOL, sellToken, dexTradeSize, true) as number;
         tokenToDollarOutput = this.web3.utils.toWei(tokenToDollarOutput.toString(), 'ether');
         await this.executeMockedTransaction(this.usdcTokenContract, this.account, tokenToDollarOutput);
         // NASTAVAK:)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
-      } else if (exchange === "uniswap" && dexTradeSize > 0 && multipleTrades) {
-        let dollarToTokenOutput = await this.findBestLiquidity("USDC", sellToken, dexTradeSize, true) as number;
+      } else if (exchange === UNISWAP_NAME && dexTradeSize > 0 && multipleTrades) {
+        let dollarToTokenOutput = await this.findBestLiquidity(USDC_TOKEN_SYMBOL, sellToken, dexTradeSize, true) as number;
         dollarToTokenOutput = this.web3.utils.toWei(dollarToTokenOutput.toString(), 'ether');
         await this.executeMockedTransaction(this.usdcTokenContract, this.dexAggregatorContract.options.address, dollarToTokenOutput);
       }
@@ -377,20 +383,20 @@ export class TradeService {
     let amountSold = 0;
     const buyTokenContract = this.priceIndexService.getToken(buyToken, false);
     for (let [exchange, dexTradeSize] of Object.entries(liquidityObject)) {
-      if (exchange === "liquidDex" && dexTradeSize > 0) {
+      if (exchange === LIQUIDDEX_NAME && dexTradeSize > 0) {
         amountSold = this.web3.utils.toWei(dexTradeSize.toString(), 'ether');
         isLiquidArray.push(true);
         amountSoldArray.push(amountSold);
         tokenSoldArray.push(this.usdcTokenContract.options.address);
         tokenBoughtArray.push(buyTokenContract.options.address);
-      } else if (exchange === "illiquidDex" && dexTradeSize > 0) {
+      } else if (exchange === ILLIQUIDDEX_NAME && dexTradeSize > 0) {
         amountSold = this.web3.utils.toWei(dexTradeSize.toString(), 'ether');
         isLiquidArray.push(false);
         amountSoldArray.push(amountSold);
         tokenSoldArray.push(this.usdcTokenContract.options.address);
         tokenBoughtArray.push(buyTokenContract.options.address);
-      } else if (exchange === "uniswap" && dexTradeSize > 0) {
-        let tokenToDollarOutput = await this.findBestLiquidity(buyToken, "USDC", dexTradeSize, true) as number;
+      } else if (exchange === UNISWAP_NAME && dexTradeSize > 0) {
+        let tokenToDollarOutput = await this.findBestLiquidity(buyToken, USDC_TOKEN_SYMBOL, dexTradeSize, true) as number;
         tokenToDollarOutput = this.web3.utils.toWei(tokenToDollarOutput.toString(), 'ether');
         await this.executeMockedTransaction(buyTokenContract, this.account, tokenToDollarOutput);
       }
@@ -400,7 +406,8 @@ export class TradeService {
 
   async tokenSwap(buyToken: string, sellToken: string, tradeSize: number) {
     // get user balance of sell token
-    const userBalance = await this.priceIndexService.getToken(sellToken, false).methods.balanceOf(this.account).call();
+    let userBalance = await this.priceIndexService.getToken(sellToken, false).methods.balanceOf(this.account).call();
+    userBalance = this.web3.utils.fromWei(userBalance, "ether");
     if (Number(userBalance) < tradeSize) {
       console.log("User balance is too low.");
       return false;
@@ -409,18 +416,18 @@ export class TradeService {
     const userTradeSize = this.web3.utils.toWei(tradeSize.toString(), "ether");
     const sellTokenContract = this.priceIndexService.getToken(sellToken, false);
     try {
-      await sellTokenContract.methods.transfer(this.dexAggregatorContract.options.address, userTradeSize).send({
+      await sellTokenContract.methods.approve(this.dexAggregatorContract.options.address, userTradeSize).send({
         from: this.account
       });
     } catch (error) {
       console.log("Error approving token transfer: ", error);
       return false;
     }
-    if (buyToken !== "USDC" && sellToken !== "USDC") {
-      const liquidityPath = await this.findBestLiquidity("USDC", sellToken, tradeSize, false) as TradeSize;
+    if (buyToken !== USDC_TOKEN_SYMBOL && sellToken !== USDC_TOKEN_SYMBOL) {
+      const liquidityPath = await this.findBestLiquidity(USDC_TOKEN_SYMBOL, sellToken, tradeSize, false) as TradeSize;
       const [isLiquidArray1, tokenSoldArray1, tokenBoughtArray1, amountSoldArray1] = await this.tokenToDollarConversion(liquidityPath, sellToken, true);
-      const tokenToDollarOutput = await this.findBestLiquidity("USDC", sellToken, tradeSize, true) as number;
-      const secondLiquidityPath = await this.findBestLiquidity(buyToken, "USDC", tokenToDollarOutput, false) as TradeSize;
+      const tokenToDollarOutput = await this.findBestLiquidity(USDC_TOKEN_SYMBOL, sellToken, tradeSize, true) as number;
+      const secondLiquidityPath = await this.findBestLiquidity(buyToken, USDC_TOKEN_SYMBOL, tokenToDollarOutput, false) as TradeSize;
 
       const [isLiquidArray2, tokenSoldArray2, tokenBoughtArray2, amountSoldArray2] = await this.dollarToTokenConversion(secondLiquidityPath, buyToken);
       const isLiquidArray = [...isLiquidArray1, ...isLiquidArray2];
@@ -441,8 +448,8 @@ export class TradeService {
         console.log("Error executing swaps: ", error);
         return false;
       }
-    } else if (buyToken === "USDC") {
-      const liquidityPath = await this.findBestLiquidity("USDC", sellToken, tradeSize, false) as TradeSize;
+    } else if (buyToken === USDC_TOKEN_SYMBOL) {
+      const liquidityPath = await this.findBestLiquidity(USDC_TOKEN_SYMBOL, sellToken, tradeSize, false) as TradeSize;
       let [isLiquidArray, tokenSoldArray, tokenBoughtArray, amountSoldArray] = await this.tokenToDollarConversion(liquidityPath, sellToken, false);
 
       try {
@@ -458,8 +465,8 @@ export class TradeService {
         console.log("Error executing swaps: ", error);
         return false;
       }
-    } else if (sellToken === "USDC") {
-      const liquidityPath = await this.findBestLiquidity(buyToken, "USDC", tradeSize, false) as TradeSize;
+    } else if (sellToken === USDC_TOKEN_SYMBOL) {
+      const liquidityPath = await this.findBestLiquidity(buyToken, USDC_TOKEN_SYMBOL, tradeSize, false) as TradeSize;
       let [isLiquidArray, tokenSoldArray, tokenBoughtArray, amountSoldArray] = await this.dollarToTokenConversion(liquidityPath, buyToken);
 
       try {
@@ -511,13 +518,13 @@ export class TradeService {
     // this.calculateRandomTrade(this.liquidDexContract, true);
     // console.log(this.liquidDexContract);
 
-    setInterval(() => {
-      console.log("Executing random trade1...");
-      this.calculateRandomTrade(this.liquidDexContract, true);
-    }, Math.floor(Math.random() * 4000) + 1000); // random interval between 1 and 5 seconds
-    setInterval(() => {
-      console.log("Executing random trade2...");
-      this.calculateRandomTrade(this.illiquidDexContract, false);
-    }, Math.floor(Math.random() * 50000) + 10000); // random interval between 10 and 60 seconds
+    // setInterval(() => {
+    //   console.log("Executing random trade1...");
+    //   this.calculateRandomTrade(this.liquidDexContract, true);
+    // }, Math.floor(Math.random() * 4000) + 1000); // random interval between 1 and 5 seconds
+    // setInterval(() => {
+    //   console.log("Executing random trade2...");
+    //   this.calculateRandomTrade(this.illiquidDexContract, false);
+    // }, Math.floor(Math.random() * 50000) + 10000); // random interval between 10 and 60 seconds
   }
 }

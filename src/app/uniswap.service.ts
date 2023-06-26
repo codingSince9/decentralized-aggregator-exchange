@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ChainId, Token, WETH, Fetcher, Route, Trade, TokenAmount, TradeType } from '@uniswap/sdk'
 import { HttpClient } from '@angular/common/http';
+import { USDC_TOKEN_SYMBOL } from './trade.service';
 
 export interface Market {
   token0: {
@@ -143,12 +144,12 @@ export class UniswapService {
     `
 
     const correctMarket = (market: Market) => {
-      if ((market.token1.symbol == 'WETH' || market.token0.symbol == 'USDC') &&
-        !(market.token1.symbol == 'WETH' && market.token0.symbol == 'USDC')
+      if ((market.token1.symbol == 'WETH' || market.token0.symbol == USDC_TOKEN_SYMBOL) &&
+        !(market.token1.symbol == 'WETH' && market.token0.symbol == USDC_TOKEN_SYMBOL)
       ) {
         market.token0Price = this.ETH_PRICE / market.token0Price;
-        market.token1.symbol = 'USDC';
-      } else if (market.token1.symbol == 'WETH' && market.token0.symbol == 'USDC') {
+        market.token1.symbol = USDC_TOKEN_SYMBOL;
+      } else if (market.token1.symbol == 'WETH' && market.token0.symbol == USDC_TOKEN_SYMBOL) {
         const temp = market.token0;
         market.token0 = market.token1;
         market.token1 = temp;

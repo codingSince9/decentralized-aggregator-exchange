@@ -1,6 +1,6 @@
 import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { PriceIndexService } from '../price-index.service';
-import { TradeService, TradeSize } from '../trade.service';
+import { TradeService, TradeSize, USDC_TOKEN_SYMBOL } from '../trade.service';
 import { UniswapService } from '../uniswap.service';
 import { TradePricesComponent } from '../trade-prices/trade-prices.component';
 import { TradeRoutingComponent } from '../trade-routing/trade-routing.component';
@@ -40,7 +40,7 @@ export class TradeDexComponent {
   showDivBuy: boolean = false;
   showRoute: boolean = false;
   executingTrade: boolean = false;
-  usdcToken = { name: 'USD Coin', ticker: 'USDC', image: '/assets/images/usdc.png' };
+  usdcToken = { name: 'USD Coin', ticker: USDC_TOKEN_SYMBOL, image: '/assets/images/usdc.png' };
   tokens: any[] = [
     { name: 'Bitcoin', ticker: 'WBTC', image: '/assets/images/bitcoin.png' },
     // { name: 'Ethereum', ticker: 'ETH', image: '/assets/images/ethereum.png' },
@@ -91,7 +91,7 @@ export class TradeDexComponent {
   }
 
   isTokenToTokenSwap() {
-    this.tokenToTokenSwap = this.selectedTokenSell.ticker !== 'USDC' && this.selectedTokenBuy.ticker !== 'USDC';
+    this.tokenToTokenSwap = this.selectedTokenSell.ticker !== USDC_TOKEN_SYMBOL && this.selectedTokenBuy.ticker !== USDC_TOKEN_SYMBOL;
   }
 
   selectTokenSell(token: any) {
@@ -127,13 +127,25 @@ export class TradeDexComponent {
     this.tokensBuy = this.tokens.filter((token) => token.ticker !== this.selectedTokenSell.ticker);
   }
 
+  correctExchangeName(exchangeName: string) {
+    if (exchangeName === "illiquidDex") {
+      return "Non liquid DEX";
+    } else if (exchangeName === "liquidDex") {
+      return "Liquid DEX";
+    } else {
+      return "Uniswap";
+    }
+  }
+
   setPercentages(percentages: any, ticker: string, amount: number) {
+    let exchangeName: string;
     for (let [key, value] of Object.entries(percentages)) {
       if (Number(value) > 0) {
+        exchangeName = this.correctExchangeName(key);
         let percentage = (value as number / amount) * 100;
         // limit percentage to 3 decimal places
         percentage = Math.round((percentage + Number.EPSILON) * 1000) / 1000;
-        this.percentages.push({ exchangeName: key, percentageAmount: percentage, ticker: ticker });
+        this.percentages.push({ exchangeName: exchangeName, percentageAmount: percentage, ticker: ticker });
       }
     }
   }
@@ -142,15 +154,15 @@ export class TradeDexComponent {
     this.percentages = [];
     this.tokenAmountToSpend = amount;
 
-    if (this.selectedTokenBuy.ticker !== 'USDC' && this.selectedTokenSell.ticker !== 'USDC') {
-      let usdcAmount = await this.tradeService.findBestLiquidity('USDC', this.selectedTokenSell.ticker, amount, true) as number;
-      const amountsToUsdc = await this.tradeService.findBestLiquidity('USDC', this.selectedTokenSell.ticker, amount, false) as TradeSize;
-      this.setPercentages(amountsToUsdc, 'USDC', amount);
+    if (this.selectedTokenBuy.ticker !== USDC_TOKEN_SYMBOL && this.selectedTokenSell.ticker !== USDC_TOKEN_SYMBOL) {
+      let usdcAmount = await this.tradeService.findBestLiquidity(USDC_TOKEN_SYMBOL, this.selectedTokenSell.ticker, amount, true) as number;
+      const amountsToUsdc = await this.tradeService.findBestLiquidity(USDC_TOKEN_SYMBOL, this.selectedTokenSell.ticker, amount, false) as TradeSize;
+      this.setPercentages(amountsToUsdc, USDC_TOKEN_SYMBOL, amount);
 
-      this.tokenAmountToReceive = await this.tradeService.findBestLiquidity(this.selectedTokenBuy.ticker, 'USDC', usdcAmount, true) as number;
-      const amountsToToken = await this.tradeService.findBestLiquidity('USDC', this.selectedTokenSell.ticker, usdcAmount, false) as TradeSize;
+      this.tokenAmountToReceive = await this.tradeService.findBestLiquidity(this.selectedTokenBuy.ticker, USDC_TOKEN_SYMBOL, usdcAmount, true) as number;
+      const amountsToToken = await this.tradeService.findBestLiquidity(USDC_TOKEN_SYMBOL, this.selectedTokenSell.ticker, usdcAmount, false) as TradeSize;
       this.setPercentages(amountsToToken, this.selectedTokenBuy.ticker, usdcAmount);
-      this.tokenRoute = [this.selectedTokenSell.ticker, ">", "USDC", ">", this.selectedTokenBuy.ticker];
+      this.tokenRoute = [this.selectedTokenSell.ticker, ">", USDC_TOKEN_SYMBOL, ">", this.selectedTokenBuy.ticker];
     } else {
       this.tokenAmountToReceive = await this.tradeService.findBestLiquidity(
         this.selectedTokenBuy.ticker,
@@ -160,9 +172,9 @@ export class TradeDexComponent {
       ) as number;
 
       const amountsToUsdc = await this.tradeService.findBestLiquidity(this.selectedTokenBuy.ticker, this.selectedTokenSell.ticker, amount, false) as TradeSize;
-      this.setPercentages(amountsToUsdc, 'USDC', amount);
-      this.tokenRoute = this.selectedTokenSell.ticker == "USDC" ?
-        ["USDC", ">", this.selectedTokenBuy.ticker] : [this.selectedTokenSell.ticker, ">", "USDC"];
+      this.setPercentages(amountsToUsdc, USDC_TOKEN_SYMBOL, amount);
+      this.tokenRoute = this.selectedTokenSell.ticker == USDC_TOKEN_SYMBOL ?
+        [USDC_TOKEN_SYMBOL, ">", this.selectedTokenBuy.ticker] : [this.selectedTokenSell.ticker, ">", USDC_TOKEN_SYMBOL];
     }
   }
 
