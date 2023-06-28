@@ -31,14 +31,10 @@ const usdcToken = require('../../build/contracts/Usdc.json');
 const wbtcToken = require('../../build/contracts/Wbtc.json');
 
 // import variable from .env file
-const PUBLIC_KEY_8_LAPTOP = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
-const PUBLIC_KEY_9_LAPTOP = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f"
-const PUBLIC_KEY_8_DESKTOP = "0x71fb28AC428f36d5F48131211E30A09B44e03c66";
-const PUBLIC_KEY_9_DESKTOP = "0xFDc97c9c268f88F7ada4e8C3963F240Cbd80De0D";
-const PRIVATE_KEY_8_LAPTOP = "76db17660b790ecc22ef00bbf93ce9c60989a7a9488aa6f6eb1aa948bb2513b3";
-const PRIVATE_KEY_9_LAPTOP = "2979ee37a8723c4b0870240db55f154b4f43db048bace7da227206add2d7fd0d";
-const PRIVATE_KEY_8_DESKTOP = "9a4dde90a50d8243cfef4450d0783f8c6338850a1ad29688fbbe623ce71f12d7";
-const PRIVATE_KEY_9_DESKTOP = "eb428d5c8a8b5c2ee76c18c88f2828b7f86df212800f64f9fdeea26178c39867";
+const PUBLIC_KEY_8 = "0xD0D76B4C734CdEf0d66cfe3595A82538cfE6550e";
+const PUBLIC_KEY_9 = "0x5c8ce49DB19b2e7cd9FfD9853Cb91ba8Cf93e83f";
+const PRIVATE_KEY_8 = "76db17660b790ecc22ef00bbf93ce9c60989a7a9488aa6f6eb1aa948bb2513b3";
+const PRIVATE_KEY_9 = "2979ee37a8723c4b0870240db55f154b4f43db048bace7da227206add2d7fd0d";
 const BUY_DIRECTION = "BUY";
 const SELL_DIRECTION = "SELL";
 export const USDC_TOKEN_SYMBOL = "USDC";
@@ -150,8 +146,8 @@ export class TradeService {
   }
 
   async calculateRandomTrade(dexContract: any, isLiquid: boolean) {
-    const tradeAccountPublicKey = isLiquid ? PUBLIC_KEY_8_LAPTOP : PUBLIC_KEY_9_LAPTOP;
-    const tradeAccountPrivateKey = isLiquid ? PRIVATE_KEY_8_LAPTOP : PRIVATE_KEY_9_LAPTOP;
+    const tradeAccountPublicKey = isLiquid ? PUBLIC_KEY_8 : PUBLIC_KEY_9;
+    const tradeAccountPrivateKey = isLiquid ? PRIVATE_KEY_8 : PRIVATE_KEY_9;
     const buyToken = [
       isLiquid ? this.liquidDexContract : this.illiquidDexContract,
       this.linkTokenContract,
@@ -326,10 +322,10 @@ export class TradeService {
   }
 
   async executeMockedTransaction(token: any, receivingAddress: string, amount: number) {
-    const nonce = await this.web3.eth.getTransactionCount(PUBLIC_KEY_8_LAPTOP);
+    const nonce = await this.web3.eth.getTransactionCount(PUBLIC_KEY_8);
     const transferData = token.methods.transfer(receivingAddress, amount).encodeABI();
     const transactionObject = {
-      from: PUBLIC_KEY_8_LAPTOP,
+      from: PUBLIC_KEY_8,
       to: token.options.address,
       // nonce: nonce,
       gasPrice: 20000000000,
@@ -337,7 +333,7 @@ export class TradeService {
       value: 0,
       data: transferData
     };
-    const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, PRIVATE_KEY_8_LAPTOP);
+    const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, PRIVATE_KEY_8);
     const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
     console.log("Executed mocked transaction: ", transactionReceipt);
   }
@@ -498,9 +494,9 @@ export class TradeService {
       return;
     }
 
-    const randomTradeAccount8 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY_8_LAPTOP);
+    const randomTradeAccount8 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY_8);
     this.web3.eth.accounts.wallet.add(randomTradeAccount8);
-    const randomTradeAccount9 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY_9_LAPTOP);
+    const randomTradeAccount9 = this.web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY_9);
     this.web3.eth.accounts.wallet.add(randomTradeAccount9);
 
     const accounts = await this.web3.eth.getAccounts();
