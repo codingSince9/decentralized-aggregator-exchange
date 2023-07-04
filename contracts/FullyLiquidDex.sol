@@ -58,20 +58,20 @@ contract FullyLiquidDecentralizedExchange {
         // k (constant product) = 164 900 000 000
         // price per ETH = 1750
 
-        reserves[address(link)][address(usdc)] = 7000000000000000000000000;
-        reserves[address(usdc)][address(link)] = 50000000000000000000000000;
+        reserves[address(link)][address(usdc)] = 700000000000000000000000;
+        reserves[address(usdc)][address(link)] = 5000000000000000000000000;
         // price per LINK = 7,14
 
-        reserves[address(matic)][address(usdc)] = 9000000000000000000000000;
-        reserves[address(usdc)][address(matic)] = 10000000000000000000000000;
+        reserves[address(matic)][address(usdc)] = 900000000000000000000000;
+        reserves[address(usdc)][address(matic)] = 1000000000000000000000000;
         // price per MATIC = 1,11
 
-        reserves[address(sushi)][address(usdc)] = 9500000000000000000000000;
-        reserves[address(usdc)][address(sushi)] = 10000000000000000000000000;
+        reserves[address(sushi)][address(usdc)] = 950000000000000000000000;
+        reserves[address(usdc)][address(sushi)] = 1000000000000000000000000;
         // price per SUSHI = 1,15
 
-        reserves[address(wbtc)][address(usdc)] = 35500000000000000000000;
-        reserves[address(usdc)][address(wbtc)] = 1000000000000000000000000000;
+        reserves[address(wbtc)][address(usdc)] = 3550000000000000000000;
+        reserves[address(usdc)][address(wbtc)] = 100000000000000000000000000;
         // price per WBTC = 28 170
     }
 

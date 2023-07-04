@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import { DydxService } from './dydx.service';
 import { PriceIndexService } from './price-index.service';
 import { UniswapService } from './uniswap.service';
-import { sqrt } from 'mathjs';
+import { sqrt, typeOf } from 'mathjs';
 
 
 declare let require: any;
@@ -64,6 +64,7 @@ export class TradeService {
   private usdcTokenContract: any;
   private wbtcTokenContract: any;
   public swapPercentages: object = {};
+  private executingTrade: boolean = false;
 
   constructor(
     private uniswapService: UniswapService,
@@ -73,11 +74,11 @@ export class TradeService {
 
   getRandomTradeSize(probability: number) {
     let size: number;
-    if (probability < 0.75) {
+    if (probability < 0.90) {
       size = Math.random() * 990 + 10;
-    } else if (probability < 0.95) {
+    } else if (probability < 0.98) {
       size = Math.random() * 4000 + 1000;
-    } else if (probability < 0.995) {
+    } else if (probability < 0.999) {
       size = Math.random() * 5000 + 5000;
     } else {
       size = Math.random() * 990000 + 10000;
@@ -91,42 +92,47 @@ export class TradeService {
     tradeAccountPublicKey: string,
     tradeAccountPrivateKey: string,
     dexContract: any,
-    tradeSize: number,
+    tradeSize: string,
     buyTokenSymbol: string,
     direction: string
   ) {
-    let nonce = await this.web3.eth.getTransactionCount(tradeAccountPublicKey);
+    // let nonce = await this.web3.eth.getTransactionCount(tradeAccountPublicKey);
     let transactionObject = {
       from: tradeAccountPublicKey,
-      to: this.priceIndexService.getToken(buyTokenSymbol, true),
+      to: "to",
       // nonce: nonce,
       gasPrice: 20000000000,
       gas: 6721975,
       value: 0,
       data: "transferData"
     };
+    tradeSize = this.web3.utils.fromWei(tradeSize, 'ether');
     if (direction == BUY_DIRECTION) {
       // meaning we are selling usdc tokens for another token
+      transactionObject["to"] = this.usdcTokenContract.options.address;
       transactionObject["data"] = this.usdcTokenContract.methods.transfer(this.dexAggregatorContract.options.address, tradeSize).encodeABI();
       console.log("TRANSFERING USDC TOKENS");
     } else {
       const buyTokenContract = this.priceIndexService.getToken(buyTokenSymbol, false);
+      transactionObject["to"] = buyTokenContract.options.address;
       transactionObject["data"] = buyTokenContract.methods.transfer(this.dexAggregatorContract.options.address, tradeSize).encodeABI();
       console.log("TRANSFERING", buyTokenSymbol, "TOKENS");
     }
-    let signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, tradeAccountPrivateKey);
-    let transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+    const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, tradeAccountPrivateKey);
+    const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
     console.log("Pre-Transaction:", transactionReceipt);
+    setTimeout(() => {
+    }, 5000);
 
     const buyTokenAddress = this.priceIndexService.getToken(buyTokenSymbol, true);
-    nonce = await this.web3.eth.getTransactionCount(tradeAccountPublicKey);
+    // nonce = await this.web3.eth.getTransactionCount(tradeAccountPublicKey);
     const isLiquidArray = dexContract === this.liquidDexContract ? [true] : [false];
     const tokenSoldArray = direction === BUY_DIRECTION ? [buyTokenAddress] : [this.usdcTokenContract.options.address];
     const tokenBoughtArray = direction === BUY_DIRECTION ? [this.usdcTokenContract.options.address] : [buyTokenAddress];
     const amountSoldArray = [tradeSize];
-    console.log("nonce", nonce);
+    // console.log("nonce", nonce);
 
-    transactionObject = {
+    const transactionObject2 = {
       from: tradeAccountPublicKey,
       to: this.dexAggregatorContract.options.address,
       // nonce: nonce,
@@ -140,25 +146,25 @@ export class TradeService {
         amountSoldArray
       ).encodeABI()
     };
-    signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, tradeAccountPrivateKey);
-    transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
-    console.log("Final Transaction:", transactionReceipt);
+    const signedTransaction2 = await this.web3.eth.accounts.signTransaction(transactionObject2, tradeAccountPrivateKey);
+    const transactionReceipt2 = await this.web3.eth.sendSignedTransaction(signedTransaction2.rawTransaction);
+    console.log("Final Transaction:", transactionReceipt2);
+    setTimeout(() => {
+    }, 5000);
   }
 
-  async calculateRandomTrade(dexContract: any, isLiquid: boolean) {
+  async calculateRandomTrade(isLiquid: boolean) {
+    const dexContract = isLiquid ? this.liquidDexContract : this.illiquidDexContract;
     const tradeAccountPublicKey = isLiquid ? PUBLIC_KEY_8 : PUBLIC_KEY_9;
     const tradeAccountPrivateKey = isLiquid ? PRIVATE_KEY_8 : PRIVATE_KEY_9;
     const buyToken = [
-      isLiquid ? this.liquidDexContract : this.illiquidDexContract,
+      // isLiquid ? this.liquidDexContract : this.illiquidDexContract,
       this.linkTokenContract,
       this.maticTokenContract,
       this.sushiTokenContract,
       this.wbtcTokenContract
-    ][Math.floor(Math.random() * 5)].options.address;
+    ][Math.floor(Math.random() * 4)].options.address;
     let tradeSize = this.getRandomTradeSize(Math.random());
-
-    console.log("Trade size: " + this.web3.utils.fromWei(tradeSize, 'ether'));
-    console.log("Token pair: " + buyToken);
     let buyTokenSymbol = "";
     if (buyToken === this.linkTokenContract.options.address) {
       buyTokenSymbol = "LINK";
@@ -171,8 +177,12 @@ export class TradeService {
       console.log("Token pair name: SUSHI");
     } else {
       buyTokenSymbol = "WBTC";
+      tradeSize = String(Number(tradeSize) / 1000);
       console.log("Token pair name: WBTC");
     }
+
+    console.log("Trade size: " + this.web3.utils.fromWei(tradeSize, 'ether'));
+    console.log("Token pair: " + buyToken);
 
     // get price of token pair
     // console.log(this.uniswapService.markets);
@@ -223,6 +233,8 @@ export class TradeService {
       const signedTransaction = await this.web3.eth.accounts.signTransaction(transactionObject, tradeAccountPrivateKey);
       const transactionReceipt = await this.web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
       console.log("Arbitrage Transaction:", transactionReceipt);
+      setTimeout(() => {
+      }, 5000);
     } else {
       // Randomly decide whether to buy or sell
       const direction = Math.random() >= 0.5 ? BUY_DIRECTION : SELL_DIRECTION;
@@ -401,6 +413,7 @@ export class TradeService {
   }
 
   async tokenSwap(buyToken: string, sellToken: string, tradeSize: number) {
+    this.executingTrade = true;
     // get user balance of sell token
     let userBalance = await this.priceIndexService.getToken(sellToken, false).methods.balanceOf(this.account).call();
     userBalance = this.web3.utils.fromWei(userBalance, "ether");
@@ -412,7 +425,7 @@ export class TradeService {
     const userTradeSize = this.web3.utils.toWei(tradeSize.toString(), "ether");
     const sellTokenContract = this.priceIndexService.getToken(sellToken, false);
     try {
-      await sellTokenContract.methods.approve(this.dexAggregatorContract.options.address, userTradeSize).send({
+      await sellTokenContract.methods.transfer(this.dexAggregatorContract.options.address, userTradeSize).send({
         from: this.account
       });
     } catch (error) {
@@ -479,6 +492,7 @@ export class TradeService {
         return false;
       }
     }
+    this.executingTrade = false;
     return true;
   }
 
@@ -514,13 +528,14 @@ export class TradeService {
     // this.calculateRandomTrade(this.liquidDexContract, true);
     // console.log(this.liquidDexContract);
 
+    setInterval(async () => {
+      if (!this.executingTrade) {
+        const isLiquid = Math.random() >= 0.5;
+        console.log("Executing random trade...");
+        await this.calculateRandomTrade(isLiquid);
+      }
+    }, Math.floor(Math.random() * 10000) + 5000); // random interval between 1 and 5 seconds
     // setInterval(() => {
-    //   console.log("Executing random trade1...");
-    //   this.calculateRandomTrade(this.liquidDexContract, true);
-    // }, Math.floor(Math.random() * 4000) + 1000); // random interval between 1 and 5 seconds
-    // setInterval(() => {
-    //   console.log("Executing random trade2...");
-    //   this.calculateRandomTrade(this.illiquidDexContract, false);
-    // }, Math.floor(Math.random() * 50000) + 10000); // random interval between 10 and 60 seconds
+    // }, Math.floor(Math.random() * 5000) + 1000); // random interval between 10 and 60 seconds
   }
 }

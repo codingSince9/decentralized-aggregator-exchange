@@ -1,27 +1,46 @@
-# DiplomskiV1
+# Diplomski
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.0.5.
+Projekt je napravljen koristeći tehnologije Angular i Solidity.
+Na početku je potrebno instalirati pakete naredbom `npm install` u root direktoriju projekta.
 
-## Development server
+## 1. Dodavanje lokalne mreže
+Kako bi program mogao funkcionirati unutar Metamask ekstenzije potrebno je dodati lokalnu mrežu.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+Klikom na metamask ekstenziju pa potom na padajući izbornik koji se nalazi u gornjem dijelu na sredini vidimo mreže.
+Na kraju liste nalazi se gumb "Add network". Klikom na gumb otvara se stranica ekstenzije na kojoj je potrebno kliknuti na gumb "Add a network manually".
 
-## Code scaffolding
+U polja je potrebno unijeti podatke:\
+**Network name**: "Localhost"\
+**New RPC URL**: [http://localhost:8545](http://localhost:8545)\
+**Chain ID**: "1337"\
+**Currency symbol**: "ETH"
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Klikom na gumb "Save" spremiti mrežu i odabrati je u padajućem izborniku.
 
-## Build
+## 2. Modifikacija privatnog i javnog ključa unutar koda
+Zbog načina na koji aplikacija funkcionira, potrebno je iz lokalne Ganache aplikacije kopirati dva privatna i dva javna ključa koja će biti korištena samo od strane aplikacije.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Odgovarajuće ključeve je potrebno kopirati iz Ganache aplikacije u datoteku `src/app/trade.service.ts`\
+na linijama kôda 34 do 37 u varijable pod nazivom:
+```javascript
+const PUBLIC_KEY_8 = ""
+const PUBLIC_KEY_9 = ""
+const PRIVATE_KEY_8 = ""
+const PRIVATE_KEY_9 = ""
+```
+Kao i u datoteku\
+`migrations/2_deploy_contracts.js`
+na linijama kôda 60 i 61. Također je potrebno promijeniti adresu korisnika koji će koristiti aplikaciju na liniji kôda 74. u varijablama:
+```javascript
+const account8 = ""
+const account9 = ""
 
-## Running unit tests
+const userAccount = ""
+```
+Na korisnički račun će biti prebačeno 1000 tokena USDC i 50 tokena LINK kako bi korisnik mogao trgovati.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-## Running end-to-end tests
+## 3. Pokretanje aplikacije
+Za pokretanje aplikacije potrebno je pokrenuti Ganache aplikaciju kao i pokrenuti naredbu `ng serve` u root direktoriju projekta.
+Nakon izvršavanja naredbe, aplikacija će biti dostupna na url-u `http://localhost:4200/`
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.

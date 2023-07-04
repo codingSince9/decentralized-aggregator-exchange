@@ -165,10 +165,12 @@ export class UniswapService {
         const value = pairs[key];
         if (key == 'eth_usdc') {
           this.ETH_PRICE = value.token0Price;
-        } else if (key == 'wbtc_usdc') {
-          value.reserve1 /= this.ETH_PRICE;
+        } else {
+          if (key == 'wbtc_usdc') {
+            value.reserve1 /= this.ETH_PRICE;
+          }
+          this.markets.push(correctMarket(value));
         }
-        this.markets.push(correctMarket(value));
       });
     });
 

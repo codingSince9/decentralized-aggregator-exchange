@@ -65,31 +65,31 @@ contract NotSoLiquidDecentralizedExchange {
         // k (constant product) = 1 649 000 000
         // price per ETH = 1752,58
 
-        reserves[address(link)][address(usdc)] = 70000000000000000000000;
-        reserves[address(usdc)][address(link)] = 500000000000000000000000;
-        // x (link) = 70 000
-        // y (usdc) = 500 000
+        reserves[address(link)][address(usdc)] = 7000000000000000000000;
+        reserves[address(usdc)][address(link)] = 50000000000000000000000;
+        // x (link) = 7 000
+        // y (usdc) = 50 000
         // k (constant product) = 35 000 000 000
         // price per ETH = 7,14
 
-        reserves[address(matic)][address(usdc)] = 90000000000000000000000;
-        reserves[address(usdc)][address(matic)] = 100000000000000000000000;
-        // x (matic) = 90 000
-        // y (usdc) = 100 000
+        reserves[address(matic)][address(usdc)] = 9000000000000000000000;
+        reserves[address(usdc)][address(matic)] = 10000000000000000000000;
+        // x (matic) = 9 000
+        // y (usdc) = 10 000
         // k (constant product) = 9 000 000 000
         // price per ETH = 1,11
 
-        reserves[address(sushi)][address(usdc)] = 95000000000000000000000;
-        reserves[address(usdc)][address(sushi)] = 100000000000000000000000;
-        // x (sushi) = 95 000
-        // y (usdc) = 100 000
+        reserves[address(sushi)][address(usdc)] = 9500000000000000000000;
+        reserves[address(usdc)][address(sushi)] = 10000000000000000000000;
+        // x (sushi) = 9 500
+        // y (usdc) = 10 000
         // k (constant product) = 9 500 000 000
         // price per ETH = 1,15
 
-        reserves[address(wbtc)][address(usdc)] = 3550000000000000000000;
-        reserves[address(usdc)][address(wbtc)] = 100000000000000000000000000;
-        // x (wbtc) = 355
-        // y (usdc) = 10 000 000
+        reserves[address(wbtc)][address(usdc)] = 355000000000000000000;
+        reserves[address(usdc)][address(wbtc)] = 10000000000000000000000000;
+        // x (wbtc) = 35.5
+        // y (usdc) = 1 000 000
         // k (constant product) = 3 550 000 000
         // price per ETH = 28 170
     }

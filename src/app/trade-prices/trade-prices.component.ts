@@ -72,6 +72,7 @@ export class TradePricesComponent {
     if (tempUniswapData.length !== 0) {
       this.uniswapData = tempUniswapData;
     }
+    console.log(this.uniswapData, tempUniswapData);
     const tempDydxData = this.dydxService.getPairs();
     if (tempDydxData.length !== 0) {
       this.dydxData = tempDydxData;
@@ -93,6 +94,8 @@ export class TradePricesComponent {
     for (let i = 0; i < this.uniswapData.length; i++) {
       if (this.uniswapData[i].token0.symbol === "WETH") {
         this.uniswapData[i].token0.symbol = "ETH";
+        console.log("changed WETH to ETH");
+        continue;
       }
       let pairData: PairData = {
         pair: this.uniswapData[i].token0.symbol + "/" + this.uniswapData[i].token1.symbol,
@@ -112,6 +115,9 @@ export class TradePricesComponent {
       pairs: []
     }
     for (let i = 0; i < this.dydxData.length; i++) {
+      if (this.dydxData[i].baseAsset === "ETH") {
+        continue;
+      }
       if (this.dydxData[i].baseAsset === "BTC") {
         this.dydxData[i].baseAsset = "WBTC";
       }
@@ -130,6 +136,9 @@ export class TradePricesComponent {
       pairs: []
     }
     for (let i = 0; i < this.myDexesData.length; i++) {
+      if (this.myDexesData[i].tokenPair === "ETH/USD") {
+        continue;
+      }
       if (this.myDexesData[i].isLiquid === false) continue;
       let pairData: PairData = {
         pair: this.myDexesData[i].tokenPair,
@@ -145,6 +154,9 @@ export class TradePricesComponent {
       pairs: []
     }
     for (let i = 0; i < this.myDexesData.length; i++) {
+      if (this.myDexesData[i].tokenPair === "ETH/USD") {
+        continue;
+      }
       if (this.myDexesData[i].isLiquid === true) continue;
       let pairData: PairData = {
         pair: this.myDexesData[i].tokenPair,
